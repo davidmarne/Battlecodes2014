@@ -33,13 +33,17 @@ public class RobotPlayer{
                         fin = fin.parent;
                     }
                     System.out.println("PATH:");
-                    for(int i = path.size() -1 ; i >= 0; i-- ){
+                    for(int i = path.size() -2 ; i >= 0; i-- ){
                         System.out.println(path.get(i).curr);
                     }
                     for(int i = path.size() -2 ; i >= 0; i-- ){
-                        rc.move(rc.getLocation().directionTo(path.get(i).curr));
+                        if(rc.isActive()){
+                            rc.move(rc.getLocation().directionTo(path.get(i).curr));
+                        }else{
+                            i++;
+                        }
 
-//                    }
+                    }
 
                 }
                 rc.yield();
@@ -82,7 +86,7 @@ public class RobotPlayer{
             ArrayList<aStarNode> successors = new ArrayList<aStarNode>();
             int j = 0;
             for(Direction d: allDirections){
-                if(d != Direction.OMNI && d != Direction.NONE && getMapLoc(q.curr.add(d)) != 2){
+                if(d != Direction.OMNI && d != Direction.NONE &&  rc.senseTerrainTile(q.curr.add(d)).ordinal() != 2 && rc.senseTerrainTile(q.curr.add(d)).ordinal() != 3){
                     successors.add(new aStarNode(q, q.curr.add(d), goal));
                 }
             }
@@ -100,7 +104,7 @@ public class RobotPlayer{
 
                 if(flag == false){
                     for(int i = 0; i < open.size(); i++){
-                        if(s.curr.equals(open.get(i))){
+                        if(s.curr.equals(open.get(i))){ //)|| ten_g >= s.g){
                                 flag = true;
                         }
                     }
