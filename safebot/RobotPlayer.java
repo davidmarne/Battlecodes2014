@@ -46,6 +46,7 @@ public class RobotPlayer {
                         // you can't move through a HQ... duh
                         map[rc.senseHQLocation().x][rc.senseHQLocation().y] = 2;
                         map[rc.senseEnemyHQLocation().x][rc.senseEnemyHQLocation().y] = 2;
+
                         locateCorners();
 //                        System.out.println("write: " + corners.size());
                         rc.broadcast(0, corners.size());
@@ -66,7 +67,7 @@ public class RobotPlayer {
                         RobotUtil.assessMap(rc, map, cornersMap);
                         map[rc.senseHQLocation().x][rc.senseHQLocation().y] = 2;
                         map[rc.senseEnemyHQLocation().x][rc.senseEnemyHQLocation().y] = 2;
-                        RobotUtil.logMap(map);
+//                        RobotUtil.logMap(map);
                     }
                     // wait for HQ to broadcast positions of corners, then start
                     if (!start) {
@@ -81,7 +82,7 @@ public class RobotPlayer {
                         if (rc.isActive()) {
                             if(corners.size() > 0 && !hasOrders) {
 //                                System.out.println((rc.getRobot().getID()*rand.nextInt(corners.size()))%corners.size());
-                                corner = corners.remove((rc.getRobot().getID()*rand.nextInt(corners.size()))%(corners.size() - 3));
+                                corner = corners.get((rc.getRobot().getID() * rand.nextInt(corners.size())) % (corners.size() - 3));
                                 path = RobotUtil.bugPath(rc.getLocation(), corner, map);
                                 hasOrders = true;
                             }
@@ -93,7 +94,6 @@ public class RobotPlayer {
                                         rc.move(dir);
                                     }
                                 } else {
-                                    corners.add(corner);
                                     hasOrders = false;
                                     rc.construct(RobotType.PASTR);
                                 }
@@ -159,19 +159,19 @@ public class RobotPlayer {
                 // x - - - -
                 if (cornersMap[i][j] != 2) {
                     if (cornersMap[i-1][j-1] == 2 && cornersMap[i][j-1] == 2 && cornersMap[i-1][j] == 2) {           // top left corner
-                        corners.add(new MapLocation((j - 1) + 1, (i - 1) + 1));
+                        corners.add(new MapLocation((i - 1) + 1, (j - 1) + 1));
                         map[i+2][j+2] = 3;
 //                        System.out.println("adding corner from 1: " + "(" + (j - 1 + 2) + ", " + (i - 1 + 2) + ")");
                     } else if (cornersMap[i+1][j-1] == 2 && cornersMap[i][j-1] == 2 && cornersMap[i+1][j] == 2) {    // top right corner
-                        corners.add(new MapLocation((j - 1) + 1, (i - 1) - 1));
+                        corners.add(new MapLocation((i - 1) + 1, (j - 1) - 1));
                         cornersMap[i-2][j+2] = 3;
 //                        System.out.println("adding corner from 2: " + "(" + (j - 1 + 2) + ", " + (i - 1 - 2) + ")");
                     } else if (cornersMap[i+1][j+1] == 2 && cornersMap[i][j+1] == 2 && cornersMap[i+1][j] == 2) {    // bottom right corner
-                        corners.add(new MapLocation((j - 1) - 1, (i - 1) - 1));
+                        corners.add(new MapLocation((i - 1) - 1, (j - 1) - 1));
                         cornersMap[i-2][j-2] = 3;
 //                        System.out.println("adding corner from 3: " + "(" + (j - 1 - 2) + ", " + (i - 1 - 2) + ")");
                     } else if (cornersMap[i-1][j+1] == 2 && cornersMap[i][j+1] == 2 && cornersMap[i-1][j] == 2) {    // bottom left corner
-                        corners.add(new MapLocation((j - 1) - 1, (i - 1) + 1));
+                        corners.add(new MapLocation((i - 1) - 1, (j - 1) + 1));
                         cornersMap[i+2][j-2] = 3;
 //                        System.out.println("adding corner from 4: " + "(" + (j - 1 - 2) + ", " + (i - 1 + 2) + ")");
                     }
