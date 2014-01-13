@@ -64,7 +64,9 @@ public class RobotUtil {
         int shortestDistance = currentDistance;
         System.out.println("Start loc: (" + start.x + ", " + start.y + ")");
         System.out.println("Destination loc: (" + destination.x + ", " + destination.y + ")");
+        int roundNum = Clock.getRoundNum();;
         while(true) {
+            if (Clock.getRoundNum() - roundNum > 100) {return path;}
             // we are at out destination
             if(currentLocation.x == destination.x && currentLocation.y == destination.y) {
                 break;
@@ -86,9 +88,13 @@ public class RobotUtil {
                 MapLocation temp = currentLocation.add(currentLocation.directionTo(destination));
                 // we are not closer and the direction towards the destination is a wall
                 while(currentDistance >= shortestDistance || (map[temp.x+1][temp.y+1] == 2 || map[temp.x+1][temp.y+1] == 3)) {
+                    if (Clock.getRoundNum() - roundNum > 100) {return path;}
                     // while the targetLocation is a wall, rotate and update to new target location
                     // this deals with if we need to rotate left
+                    int flag = 0;
                     while (map[targetLocation.x+1][targetLocation.y+1] == 2 || map[targetLocation.x+1][targetLocation.y+1] == 3) {
+                        if (Clock.getRoundNum() - roundNum > 100) {return path;}
+                        flag += 1;
                         dir = dir.rotateLeft();
 //                        System.out.println("Rotate Left, DIR is now: " + dir);
                         targetLocation = currentLocation.add(dir);
@@ -96,7 +102,13 @@ public class RobotUtil {
                     // if the wall on our right disappears
                     // this deals with if we need to rotate right
                     MapLocation wallLocation = currentLocation.add(dir.rotateRight().rotateRight());
-                    if(map[wallLocation.x+1][wallLocation.y+1] == 0 || map[wallLocation.x+1][wallLocation.y+1] == 1) {
+                    if (flag == 1) {
+                        path.add(dir);
+                        currentLocation = targetLocation;
+                        currentDistance = currentLocation.distanceSquaredTo(destination);
+                        break;
+                    }
+                    if(map[wallLocation.x+1][wallLocation.y+1] != 2 && map[wallLocation.x+1][wallLocation.y+1] != 3) {
                         dir = dir.rotateRight().rotateRight();
 //                        System.out.println("Rotate Right x2, DIR is now: " + dir);
                         targetLocation = currentLocation.add(dir);

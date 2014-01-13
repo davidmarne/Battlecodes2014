@@ -35,6 +35,11 @@ public class RobotPlayer {
 						if (rc.senseObjectAtLocation(rc.getLocation().add(toEnemy)) == null) {
 							rc.spawn(toEnemy);
 						}
+
+                        if(rc.readBroadcast(100) != 0) {
+                            MapLocation newPASTR = RobotUtil.intToMapLoc(rc.readBroadcast(100));
+                            map[newPASTR.x][newPASTR.y] = 2;
+                        }
 					}
 
                     if(firstRun) {
@@ -55,10 +60,13 @@ public class RobotPlayer {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-            }
-			
-			if (rc.getType() == RobotType.SOLDIER) {
+            } else if (rc.getType() == RobotType.SOLDIER) {
 				try {
+                    // read location of newest PASTR
+                    if(rc.readBroadcast(100) != 0) {
+                        MapLocation newPASTR = RobotUtil.intToMapLoc(rc.readBroadcast(100));
+                        map[newPASTR.x][newPASTR.y] = 2;
+                    }
                     if(firstRun) {
                         firstRun = false;
                         RobotUtil.assessMap(rc, map);
@@ -76,7 +84,7 @@ public class RobotPlayer {
                     } else {
                         if (rc.isActive()) {
                             if(corners.size() > 0 && !hasOrders) {
-                                corner = corners.get((rc.getRobot().getID() * rand.nextInt(corners.size())) % (corners.size() - 3));
+                                corner = corners.get((rc.getRobot().getID() * rand.nextInt(corners.size())) % corners.size());
                                 path = RobotUtil.bugPath(rc.getLocation(), corner, map);
                                 hasOrders = true;
                             }
@@ -85,10 +93,14 @@ public class RobotPlayer {
                                     Direction dir = path.get(0);
                                     if (rc.canMove(dir)) {
                                         path.remove(0);
+                                        rc.setIndicatorString(0, "" + dir);
+                                        rc.setIndicatorString(1, "" + rc.getLocation());
                                         rc.move(dir);
                                     }
                                 } else {
                                     hasOrders = false;
+                                    rc.broadcast(100, RobotUtil.mapLocToInt(rc.getLocation()));
+                                    firstRun = true;
                                     rc.construct(RobotType.PASTR);
                                 }
                             }
@@ -97,8 +109,7 @@ public class RobotPlayer {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-			}
-			
+            }
 			rc.yield();
 		}
 	}
