@@ -16,6 +16,7 @@ public class RobotPlayer {
     static MapLocation maxCows = null;
     static Boolean firstRun = true;
     static ArrayList<MapLocation> corners= new ArrayList<MapLocation>();
+    static ArrayList<Direction> path = new ArrayList<Direction>();
 
 
     public static void run(RobotController rcIn) {
@@ -31,7 +32,7 @@ public class RobotPlayer {
 			if (rc.getType() == RobotType.HQ) {
 				try {					
 					//Check if a robot is spawnable and spawn one if it is
-					if (rc.isActive() && rc.senseRobotCount() < 1) {
+					if (rc.isActive() && rc.senseRobotCount() < 25) {
 						Direction toEnemy = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
 						if (rc.senseObjectAtLocation(rc.getLocation().add(toEnemy)) == null) {
 							rc.spawn(toEnemy);
@@ -42,6 +43,9 @@ public class RobotPlayer {
                         rc.broadcast(0, 0);
                         firstRun = false;
                         RobotUtil.assessMap(rc, map, cornersMap);
+                        // you can't move through a HQ... duh
+                        map[rc.senseHQLocation().x][rc.senseHQLocation().y] = 2;
+                        map[rc.senseEnemyHQLocation().x][rc.senseEnemyHQLocation().y] = 2;
                         locateCorners();
 //                        System.out.println("write: " + corners.size());
                         rc.broadcast(0, corners.size());
@@ -57,6 +61,13 @@ public class RobotPlayer {
 			
 			if (rc.getType() == RobotType.SOLDIER) {
 				try {
+                    if(firstRun) {
+                        firstRun = false;
+                        RobotUtil.assessMap(rc, map, cornersMap);
+                        map[rc.senseHQLocation().x][rc.senseHQLocation().y] = 2;
+                        map[rc.senseEnemyHQLocation().x][rc.senseEnemyHQLocation().y] = 2;
+                        RobotUtil.logMap(map);
+                    }
                     // wait for HQ to broadcast positions of corners, then start
                     if (!start) {
 //                        System.out.println( "read: " + rc.readBroadcast(0));
@@ -71,15 +82,14 @@ public class RobotPlayer {
                             if(corners.size() > 0 && !hasOrders) {
 //                                System.out.println((rc.getRobot().getID()*rand.nextInt(corners.size()))%corners.size());
                                 corner = corners.remove((rc.getRobot().getID()*rand.nextInt(corners.size()))%(corners.size() - 3));
+                                path = RobotUtil.bugPath(rc.getLocation(), corner, map);
                                 hasOrders = true;
                             }
                             if(hasOrders) {
-                                map = RobotUtil.assessMap(rc, map, cornersMap);
-                                RobotUtil.logMap(map);
-                                RobotUtil.bugPath(rc.getLocation(), corner, map);
-                                Direction dir = rc.getLocation().directionTo(corner);
                                 if(rc.getLocation().x != corner.x || rc.getLocation().y != corner.y) {
+                                    Direction dir = path.get(0);
                                     if (rc.canMove(dir)) {
+                                        path.remove(0);
                                         rc.move(dir);
                                     }
                                 } else {
