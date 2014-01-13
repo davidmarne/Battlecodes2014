@@ -42,11 +42,11 @@ public class RobotPlayer {
                         firstRun = false;
                         RobotUtil.assessMap(rc, map);
                         // you can't move through a HQ... duh
-                        map[rc.senseHQLocation().x][rc.senseHQLocation().y] = 2;
-                        map[rc.senseEnemyHQLocation().x][rc.senseEnemyHQLocation().y] = 2;
+                        map[rc.senseHQLocation().x+1][rc.senseHQLocation().y+1] = 2;
+                        map[rc.senseEnemyHQLocation().x+1][rc.senseEnemyHQLocation().y+1] = 2;
 
                         locateCorners();
-//                        RobotUtil.logMap(map);
+                        RobotUtil.logMap(map);
                         rc.broadcast(0, corners.size());
                         for(int i = 0; i < corners.size(); i++) {
                             rc.broadcast(i + 1, RobotUtil.mapLocToInt(corners.get(i)));
@@ -153,21 +153,36 @@ public class RobotPlayer {
                 // x - - - -
                 if (map[i][j] != 2) {
                     if (map[i-1][j-1] == 2 && map[i][j-1] == 2 && map[i-1][j] == 2) {           // top left corner
-                        corners.add(new MapLocation(i + 1 - 1, j + 1 - 1));
-                        map[i+1][j+1] = 4;
-//                        System.out.println("adding corner from 1: " + "(" + (i + 1) + ", " + (j + 1) + ")");
+                        // don't place a corner outside of the map, or on the border
+                        if(i + 1 <= mapWidth && j + 1 <= mapHeight) {
+                            corners.add(new MapLocation(i + 1 - 1, j + 1 - 1));
+                            map[i+1][j+1] = 4;
+                            System.out.println("adding corner from 1: " + "(" + (i + 1) + ", " + (j + 1) + ")");
+                        }
                     } else if (map[i+1][j-1] == 2 && map[i][j-1] == 2 && map[i+1][j] == 2) {    // top right corner
-                        corners.add(new MapLocation(i - 1 - 1, j + 1 - 1));
+                        // don't place a corner outside of the map, or on the border
+                        if(i - 1 <= mapWidth && j + 1 <= mapHeight) {
+                            corners.add(new MapLocation(i - 1 - 1, j + 1 - 1));
+                            map[i-1][j+1] = 4;
+                            System.out.println("adding corner from 2: " + "(" + (i - 1) + ", " + (j + 1) + ")");
+                        }
                         map[i-1][j+1] = 4;
-//                        System.out.println("adding corner from 2: " + "(" + (i - 1) + ", " + (j + 1) + ")");
+                        System.out.println("adding corner from 2: " + "(" + (i - 1) + ", " + (j + 1) + ")");
                     } else if (map[i+1][j+1] == 2 && map[i][j+1] == 2 && map[i+1][j] == 2) {    // bottom right corner
-                        corners.add(new MapLocation(i - 1 - 1, j - 1 - 1));
-                        map[i-1][j-1] = 4;
-//                        System.out.println("adding corner from 3: " + "(" + (i - 1) + ", " + (j - 1) + ")");
+                        // don't place a corner outside of the map, or on the border
+                        if(i - 1 <= mapWidth && j - 1 <= mapHeight) {
+                            corners.add(new MapLocation(i - 1 - 1, j - 1 - 1));
+                            map[i-1][j-1] = 4;
+                            System.out.println("adding corner from 3: " + "(" + (i - 1) + ", " + (j - 1) + ")");
+                        }
+
                     } else if (map[i-1][j+1] == 2 && map[i][j+1] == 2 && map[i-1][j] == 2) {    // bottom left corner
-                        corners.add(new MapLocation(i + 1 - 1, j - 1 - 1));
-                        map[i+1][j-1] = 4;
-//                        System.out.println("adding corner from 4: " + "(" + (i + 1) + ", " + (j - 1) + ")");
+                        // don't place a corner outside of the map, or on the border
+                        if(i + 1 <= mapWidth && j - 1 <= mapHeight) {
+                            corners.add(new MapLocation(i + 1 - 1, j - 1 - 1));
+                            map[i+1][j-1] = 4;
+//                            System.out.println("adding corner from 4: " + "(" + (i + 1) + ", " + (j - 1) + ")");
+                        }
                     }
                 }
             }
