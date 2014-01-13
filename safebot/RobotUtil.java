@@ -30,7 +30,7 @@ public class RobotUtil {
         return new MapLocation(i/100,i%100);
     }
 
-    public static int[][] assessMap(RobotController rc, int[][] map, int[][] cornersMap) {
+    public static int[][] assessMap(RobotController rc, int[][] map) {
         int mapWidth = rc.getMapWidth();
         int ogMapWidth = mapWidth;
         int mapHeight = rc.getMapHeight();
@@ -39,15 +39,15 @@ public class RobotUtil {
                 int tile;
                 if(i == 0 || j == 0 || i == ogMapWidth + 1 || j == mapHeight + 1) { // pad the map to easily find corners
                     tile = 2;
-                    cornersMap[i][j] = tile;
-                    cornersMap[ogMapWidth + 1 - i][mapHeight + 1 - j] = tile;
+                    map[i][j] = tile;
+                    map[ogMapWidth + 1 - i][mapHeight + 1 - j] = tile;
                 } else {
                     tile = rc.senseTerrainTile(new MapLocation(i - 1, j - 1)).ordinal();
-                    cornersMap[i][j] = tile > 2 ? 2 : tile;
-                    cornersMap[ogMapWidth + 1 - i][mapHeight + 1 - j] = tile > 2 ? 2 : tile;
-                    map[i - 1][j - 1] = cornersMap[i][j];
-                    map[ogMapWidth - i][ogMapWidth - j] = cornersMap[ogMapWidth + 1 - i][mapHeight + 1 - j];
+                    map[i][j] = tile > 2 ? 2 : tile;
+                    map[ogMapWidth + 1 - i][mapHeight + 1 - j] = tile > 2 ? 2 : tile;
                 }
+                map[i][j] = tile > 2 ? 2 : tile;
+                map[ogMapWidth + 1 - i][mapHeight + 1 - j] = tile > 2 ? 2 : tile;
             }
             mapWidth--;
         }

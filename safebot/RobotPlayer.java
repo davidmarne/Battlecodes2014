@@ -12,7 +12,6 @@ public class RobotPlayer {
     static RobotController rc;
     static double cowCoords[][];
     static int map[][];
-    static int cornersMap[][];
     static MapLocation maxCows = null;
     static Boolean firstRun = true;
     static ArrayList<MapLocation> corners= new ArrayList<MapLocation>();
@@ -26,8 +25,7 @@ public class RobotPlayer {
         Boolean hasOrders = false;
         Boolean start = false;
         MapLocation corner = null;
-        map = new int[rc.getMapWidth()][rc.getMapHeight()];
-        cornersMap = new int [rc.getMapWidth() + 2][rc.getMapHeight() + 2];
+        map = new int [rc.getMapWidth() + 2][rc.getMapHeight() + 2];
         while(true) {
 			if (rc.getType() == RobotType.HQ) {
 				try {					
@@ -42,13 +40,13 @@ public class RobotPlayer {
                     if(firstRun) {
                         rc.broadcast(0, 0);
                         firstRun = false;
-                        RobotUtil.assessMap(rc, map, cornersMap);
+                        RobotUtil.assessMap(rc, map);
                         // you can't move through a HQ... duh
-                        cornersMap[rc.senseHQLocation().x][rc.senseHQLocation().y] = 2;
-                        cornersMap[rc.senseEnemyHQLocation().x][rc.senseEnemyHQLocation().y] = 2;
+                        map[rc.senseHQLocation().x][rc.senseHQLocation().y] = 2;
+                        map[rc.senseEnemyHQLocation().x][rc.senseEnemyHQLocation().y] = 2;
 
                         locateCorners();
-//                        RobotUtil.logMap(cornersMap);
+//                        RobotUtil.logMap(map);
                         rc.broadcast(0, corners.size());
                         for(int i = 0; i < corners.size(); i++) {
                             rc.broadcast(i + 1, RobotUtil.mapLocToInt(corners.get(i)));
@@ -63,9 +61,9 @@ public class RobotPlayer {
 				try {
                     if(firstRun) {
                         firstRun = false;
-                        RobotUtil.assessMap(rc, map, cornersMap);
-                        cornersMap[rc.senseHQLocation().x+1][rc.senseHQLocation().y+1] = 2;
-                        cornersMap[rc.senseEnemyHQLocation().x+1][rc.senseEnemyHQLocation().y+1] = 2;
+                        RobotUtil.assessMap(rc, map);
+                        map[rc.senseHQLocation().x+1][rc.senseHQLocation().y+1] = 2;
+                        map[rc.senseEnemyHQLocation().x+1][rc.senseEnemyHQLocation().y+1] = 2;
                     }
                     // wait for HQ to broadcast positions of corners, then start
                     if (!start) {
@@ -79,7 +77,7 @@ public class RobotPlayer {
                         if (rc.isActive()) {
                             if(corners.size() > 0 && !hasOrders) {
                                 corner = corners.get((rc.getRobot().getID() * rand.nextInt(corners.size())) % (corners.size() - 3));
-                                path = RobotUtil.bugPath(rc.getLocation(), corner, cornersMap);
+                                path = RobotUtil.bugPath(rc.getLocation(), corner, map);
                                 hasOrders = true;
                             }
                             if(hasOrders) {
@@ -153,22 +151,22 @@ public class RobotPlayer {
                 // x - P - -
                 // x - - - -
                 // x - - - -
-                if (cornersMap[i][j] != 2) {
-                    if (cornersMap[i-1][j-1] == 2 && cornersMap[i][j-1] == 2 && cornersMap[i-1][j] == 2) {           // top left corner
+                if (map[i][j] != 2) {
+                    if (map[i-1][j-1] == 2 && map[i][j-1] == 2 && map[i-1][j] == 2) {           // top left corner
                         corners.add(new MapLocation(i + 1 - 1, j + 1 - 1));
-                        cornersMap[i+1][j+1] = 4;
+                        map[i+1][j+1] = 4;
 //                        System.out.println("adding corner from 1: " + "(" + (i + 1) + ", " + (j + 1) + ")");
-                    } else if (cornersMap[i+1][j-1] == 2 && cornersMap[i][j-1] == 2 && cornersMap[i+1][j] == 2) {    // top right corner
+                    } else if (map[i+1][j-1] == 2 && map[i][j-1] == 2 && map[i+1][j] == 2) {    // top right corner
                         corners.add(new MapLocation(i - 1 - 1, j + 1 - 1));
-                        cornersMap[i-1][j+1] = 4;
+                        map[i-1][j+1] = 4;
 //                        System.out.println("adding corner from 2: " + "(" + (i - 1) + ", " + (j + 1) + ")");
-                    } else if (cornersMap[i+1][j+1] == 2 && cornersMap[i][j+1] == 2 && cornersMap[i+1][j] == 2) {    // bottom right corner
+                    } else if (map[i+1][j+1] == 2 && map[i][j+1] == 2 && map[i+1][j] == 2) {    // bottom right corner
                         corners.add(new MapLocation(i - 1 - 1, j - 1 - 1));
-                        cornersMap[i-1][j-1] = 4;
+                        map[i-1][j-1] = 4;
 //                        System.out.println("adding corner from 3: " + "(" + (i - 1) + ", " + (j - 1) + ")");
-                    } else if (cornersMap[i-1][j+1] == 2 && cornersMap[i][j+1] == 2 && cornersMap[i-1][j] == 2) {    // bottom left corner
+                    } else if (map[i-1][j+1] == 2 && map[i][j+1] == 2 && map[i-1][j] == 2) {    // bottom left corner
                         corners.add(new MapLocation(i + 1 - 1, j - 1 - 1));
-                        cornersMap[i+1][j-1] = 4;
+                        map[i+1][j-1] = 4;
 //                        System.out.println("adding corner from 4: " + "(" + (i + 1) + ", " + (j - 1) + ")");
                     }
                 }
