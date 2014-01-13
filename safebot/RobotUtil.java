@@ -62,8 +62,8 @@ public class RobotUtil {
         MapLocation targetLocation;
         int currentDistance = currentLocation.distanceSquaredTo(destination);
         int shortestDistance = currentDistance;
-//        System.out.println("Start loc: (" + start.x + ", " + start.y + ")");
-//        System.out.println("Destination loc: (" + destination.x + ", " + destination.y + ")");
+        System.out.println("Start loc: (" + start.x + ", " + start.y + ")");
+        System.out.println("Destination loc: (" + destination.x + ", " + destination.y + ")");
         while(true) {
             // we are at out destination
             if(currentLocation.x == destination.x && currentLocation.y == destination.y) {
@@ -73,7 +73,7 @@ public class RobotUtil {
             targetLocation = currentLocation.add(dir);
 //            System.out.println("VAL: " + map[targetLocation.x][targetLocation.y] + "TargetLoc: " + targetLocation);
             // if we can move in the direction of the destination
-            if(map[targetLocation.x][targetLocation.y] != 2 && map[targetLocation.x][targetLocation.y] != 3) {
+            if(map[targetLocation.x+1][targetLocation.y+1] != 2 && map[targetLocation.x+1][targetLocation.y+1] != 3) {
                 path.add(dir);
 //                System.out.println("1: " + currentLocation + " -> " + dir + " -> " + targetLocation);
                 currentLocation = targetLocation;
@@ -85,10 +85,10 @@ public class RobotUtil {
                 // location to the destination should not be a wall
                 MapLocation temp = currentLocation.add(currentLocation.directionTo(destination));
                 // we are not closer and the direction towards the destination is a wall
-                while(currentDistance >= shortestDistance || (map[temp.x][temp.y] == 2 || map[temp.x][temp.y] == 3)) {
+                while(currentDistance >= shortestDistance || (map[temp.x+1][temp.y+1] == 2 || map[temp.x+1][temp.y+1] == 3)) {
                     // while the targetLocation is a wall, rotate and update to new target location
                     // this deals with if we need to rotate left
-                    while (map[targetLocation.x][targetLocation.y] == 2 || map[targetLocation.x][targetLocation.y] == 3) {
+                    while (map[targetLocation.x+1][targetLocation.y+1] == 2 || map[targetLocation.x+1][targetLocation.y+1] == 3) {
                         dir = dir.rotateLeft();
 //                        System.out.println("Rotate Left, DIR is now: " + dir);
                         targetLocation = currentLocation.add(dir);
@@ -96,7 +96,7 @@ public class RobotUtil {
                     // if the wall on our right disappears
                     // this deals with if we need to rotate right
                     MapLocation wallLocation = currentLocation.add(dir.rotateRight().rotateRight());
-                    if(map[wallLocation.x][wallLocation.y] == 0 || map[wallLocation.x][wallLocation.y] == 1) {
+                    if(map[wallLocation.x+1][wallLocation.y+1] == 0 || map[wallLocation.x+1][wallLocation.y+1] == 1) {
                         dir = dir.rotateRight().rotateRight();
 //                        System.out.println("Rotate Right x2, DIR is now: " + dir);
                         targetLocation = currentLocation.add(dir);
