@@ -37,8 +37,12 @@ public class RobotPlayer {
 						}
 
                         if(rc.readBroadcast(100) != 0) {
-                            MapLocation newPASTR = RobotUtil.intToMapLoc(rc.readBroadcast(100));
-                            map[newPASTR.x][newPASTR.y] = 2;
+                            int numOfNewPASTRs = rc.readBroadcast(100);
+                            for(int i = 1; i <= numOfNewPASTRs; i++){
+                                int newPASTRLocInt = rc.readBroadcast(100+i);
+                                MapLocation newPASTRLoc = RobotUtil.intToMapLoc(newPASTRLocInt);
+                                map[newPASTRLoc.x][newPASTRLoc.y] = 2;
+                            }
                         }
 					}
 
@@ -64,8 +68,12 @@ public class RobotPlayer {
 				try {
                     // read location of newest PASTR
                     if(rc.readBroadcast(100) != 0) {
-                        MapLocation newPASTR = RobotUtil.intToMapLoc(rc.readBroadcast(100));
-                        map[newPASTR.x][newPASTR.y] = 2;
+                        int numOfNewPASTRs = rc.readBroadcast(100);
+                        for(int i = 1; i <= numOfNewPASTRs; i++){
+                            int newPASTRLocInt = rc.readBroadcast(100+i);
+                            MapLocation newPASTRLoc = RobotUtil.intToMapLoc(newPASTRLocInt);
+                            map[newPASTRLoc.x][newPASTRLoc.y] = 2;
+                        }
                     }
                     if(firstRun) {
                         firstRun = false;
@@ -99,7 +107,10 @@ public class RobotPlayer {
                                     }
                                 } else {
                                     hasOrders = false;
-                                    rc.broadcast(100, RobotUtil.mapLocToInt(rc.getLocation()));
+                                    int numOfNewPASTRs = rc.readBroadcast(100);
+                                    numOfNewPASTRs++;
+                                    rc.broadcast(100, numOfNewPASTRs);
+                                    rc.broadcast(100 + numOfNewPASTRs, RobotUtil.mapLocToInt(rc.getLocation()));
                                     firstRun = true;
                                     rc.construct(RobotType.PASTR);
                                 }
