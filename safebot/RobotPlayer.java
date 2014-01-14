@@ -16,6 +16,16 @@ public class RobotPlayer {
     static Boolean firstRun = true;
     static ArrayList<MapLocation> corners= new ArrayList<MapLocation>();
     static ArrayList<Direction> path = new ArrayList<Direction>();
+    static int numPASTRs = 0;
+    static int guardedPASTRs = 0;
+    public static enum orderTypes{
+        makePasture, guardPasture;
+    }
+    static orderTypes orderType;
+    static int channelPASTRS = 1000;
+    static int channelPASTRMaker = 2000;
+    static int channelPASTRGuarder = 2001;
+    
 
 
     public static void run(RobotController rcIn) {
@@ -25,6 +35,7 @@ public class RobotPlayer {
         Boolean hasOrders = false;
         Boolean start = false;
         MapLocation corner = null;
+        MapLocation guardLocation = null;
         map = new int [rc.getMapWidth() + 2][rc.getMapHeight() + 2];
         while(true) {
 			if (rc.getType() == RobotType.HQ) {
@@ -36,14 +47,16 @@ public class RobotPlayer {
 							rc.spawn(toEnemy);
 						}
 
-                        if(rc.readBroadcast(100) != 0) {
+                        if(rc.readBroadcast(100) > numPASTRs) {
                             int numOfNewPASTRs = rc.readBroadcast(100);
-                            for(int i = 1; i <= numOfNewPASTRs; i++){
+                            for(int i = numPASTRs + 1; i <= numOfNewPASTRs; i++){
                                 int newPASTRLocInt = rc.readBroadcast(100+i);
                                 MapLocation newPASTRLoc = RobotUtil.intToMapLoc(newPASTRLocInt);
-                                map[newPASTRLoc.x][newPASTRLoc.y] = 2;
+                                map[newPASTRLoc.x+1][newPASTRLoc.y+1] = 2;
                             }
+                            numPASTRs = numOfNewPASTRs;
                         }
+                        
 					}
 
                     if(firstRun) {
@@ -66,20 +79,23 @@ public class RobotPlayer {
 				}
             } else if (rc.getType() == RobotType.SOLDIER) {
 				try {
-                    // read location of newest PASTR
-                    if(rc.readBroadcast(100) != 0) {
-                        int numOfNewPASTRs = rc.readBroadcast(100);
-                        for(int i = 1; i <= numOfNewPASTRs; i++){
-                            int newPASTRLocInt = rc.readBroadcast(100+i);
-                            MapLocation newPASTRLoc = RobotUtil.intToMapLoc(newPASTRLocInt);
-                            map[newPASTRLoc.x][newPASTRLoc.y] = 2;
-                        }
-                    }
+                    //if its the first run initialize the map
                     if(firstRun) {
                         firstRun = false;
                         RobotUtil.assessMap(rc, map);
                         map[rc.senseHQLocation().x+1][rc.senseHQLocation().y+1] = 2;
                         map[rc.senseEnemyHQLocation().x+1][rc.senseEnemyHQLocation().y+1] = 2;
+                    }
+                    // read location of newest PASTR and update map
+                    if(rc.readBroadcast(100) > numPASTRs) {
+                        int numOfNewPASTRs = rc.readBroadcast(100);
+                        for(int i = numPASTRs + 1; i <= numOfNewPASTRs; i++){
+                            int newPASTRLocInt = rc.readBroadcast(100+i);
+                            MapLocation newPASTRLoc = RobotUtil.intToMapLoc(newPASTRLocInt);
+                            map[newPASTRLoc.x+1][newPASTRLoc.y+1] = 2;
+                        }
+                        numPASTRs = numOfNewPASTRs;
+                        System.out.println("NUM PASTRS: " + numPASTRs);
                     }
                     // wait for HQ to broadcast positions of corners, then start
                     if (!start) {
@@ -89,30 +105,77 @@ public class RobotPlayer {
                             }
                             start = true;
                         }
-                    } else {
+                    } else {//Initialization is finished, execute strategies here
                         if (rc.isActive()) {
-                            if(corners.size() > 0 && !hasOrders) {
+                            //make a makePasture bot
+                            if(corners.size() > 0 && !hasOrders && rc.readBroadcast(2000) < corners.size()) {
                                 corner = corners.get((rc.getRobot().getID() * rand.nextInt(corners.size())) % corners.size());
                                 path = RobotUtil.bugPath(rc.getLocation(), corner, map);
                                 hasOrders = true;
+                                orderType = orderTypes.makePasture;
+                                rc.broadcast(2000, rc.readBroadcast(2000) + 1);
+                            }else if(rc.readBroadcast(100) > rc.readBroadcast(2001)){//make a guard bot
+                                guardLocation = RobotUtil.intToMapLoc(rc.readBroadcast(100+guardedPASTRs));
+                                guardedPASTRs++;
+                                path = RobotUtil.bugPath(rc.getLocation(), guardLocation, map);
+                                hasOrders = true;
+                                System.out.println("Guard Created");
+                                orderType = orderTypes.guardPasture;
+                                rc.broadcast(2001, rc.readBroadcast(2001) + 1);
                             }
+                            //
                             if(hasOrders) {
-                                if(rc.getLocation().x != corner.x || rc.getLocation().y != corner.y) {
-                                    Direction dir = path.get(0);
-                                    if (rc.canMove(dir)) {
-                                        path.remove(0);
-                                        rc.setIndicatorString(0, "" + dir);
-                                        rc.setIndicatorString(1, "" + rc.getLocation());
-                                        rc.move(dir);
+                                if (orderType == orderTypes.makePasture) {
+                                    if (rc.getLocation().x != corner.x || rc.getLocation().y != corner.y) {
+                                        Direction dir = path.get(0);
+                                        if (rc.canMove(dir)) {
+                                            path.remove(0);
+                                            rc.setIndicatorString(0, "" + dir);
+                                            rc.setIndicatorString(1, "" + rc.getLocation());
+                                            rc.move(dir);
+                                        }
+                                    } else {
+                                        hasOrders = false;
+                                        int totalPASTRs = rc.readBroadcast(100) + 1;
+                                        rc.broadcast(100, totalPASTRs);
+                                        rc.broadcast(100 + totalPASTRs, RobotUtil.mapLocToInt(rc.getLocation()));
+                                        firstRun = true;
+                                        rc.construct(RobotType.PASTR);
                                     }
-                                } else {
-                                    hasOrders = false;
-                                    int numOfNewPASTRs = rc.readBroadcast(100);
-                                    numOfNewPASTRs++;
-                                    rc.broadcast(100, numOfNewPASTRs);
-                                    rc.broadcast(100 + numOfNewPASTRs, RobotUtil.mapLocToInt(rc.getLocation()));
-                                    firstRun = true;
-                                    rc.construct(RobotType.PASTR);
+                                }else if(orderType == orderTypes.guardPasture){
+                                    if (rc.getLocation().distanceSquaredTo(guardLocation) < 4) {
+                                    	System.out.println(rc.getRobot().getID() + " made it to its guard location");
+                                        Direction dir = path.get(0);
+                                        if (rc.canMove(dir)) {
+                                            path.remove(0);
+                                            rc.setIndicatorString(0, "" + dir);
+                                            rc.setIndicatorString(1, "" + rc.getLocation());
+                                            rc.move(dir);
+                                        }
+                                    } else {
+                                        int caseNum = rand.nextInt() % 4;
+                                        if(caseNum == 0){
+                                        	MapLocation target = new MapLocation(guardLocation.x + 2, guardLocation.y +2);
+                                        	if(rc.canAttackSquare(target)){
+                                        		rc.attackSquare(target);
+                                        	}
+                                        }else if(caseNum == 1){
+                                        	MapLocation target = new MapLocation(guardLocation.x, guardLocation.y +2);
+                                        	if(rc.canAttackSquare(target)){
+                                        		rc.attackSquare(target);
+                                        	}
+                                        }else if(caseNum == 2){
+                                        	MapLocation target = new MapLocation(guardLocation.x + 2, guardLocation.y);
+                                        	if(rc.canAttackSquare(target)){
+                                        		rc.attackSquare(target);
+                                        	}
+                                        }else{
+                                        	MapLocation target = new MapLocation(guardLocation.x , guardLocation.y);
+                                        	if(rc.canAttackSquare(target)){
+                                        		rc.attackSquare(target);
+                                        	}
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -120,6 +183,8 @@ public class RobotPlayer {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
+            }else if(rc.getType() == RobotType.PASTR){
+
             }
 			rc.yield();
 		}

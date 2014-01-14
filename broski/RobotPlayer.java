@@ -105,7 +105,11 @@ public class RobotPlayer{
                 if(flag == false){
                     for(int i = 0; i < open.size(); i++){
                         if(s.curr.equals(open.get(i))){ //)|| ten_g >= s.g){
-                                flag = true;
+                            flag = true;
+                            if(s.f < open.get(i).f){
+                                open.remove(i);
+                                open.add(i, s);
+                            }
                         }
                     }
 
