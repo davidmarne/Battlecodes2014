@@ -62,8 +62,8 @@ public class RobotUtil {
         MapLocation targetLocation;
         int currentDistance = currentLocation.distanceSquaredTo(destination);
         int shortestDistance = currentDistance;
-        System.out.println("Start loc: (" + start.x + ", " + start.y + ")");
-        System.out.println("Destination loc: (" + destination.x + ", " + destination.y + ")");
+        //System.out.println("Start loc: (" + start.x + ", " + start.y + ")");
+        //System.out.println("Destination loc: (" + destination.x + ", " + destination.y + ")");
         int roundNum = Clock.getRoundNum();;
         while(true) {
             if (Clock.getRoundNum() - roundNum > 100) {return path;}

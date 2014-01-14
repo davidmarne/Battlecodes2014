@@ -112,9 +112,6 @@ public class RobotPlayer {
                                 corner = corners.get((rc.getRobot().getID() * rand.nextInt(corners.size())) % corners.size());
                                 path = RobotUtil.bugPath(rc.getLocation(), corner, map);
                                 hasOrders = true;
-                                if(rc.getRobot().getID() == 1031){
-                                	System.out.println("1031 Goal is "+corner + " path is of length " +path.size());
-                                }
                                 orderType = orderTypes.makePasture;
                                 rc.broadcast(2000, rc.readBroadcast(2000) + 1);
                             }else if(rc.readBroadcast(100) > rc.readBroadcast(2001) && !hasOrders){//make a guard bot
@@ -122,24 +119,17 @@ public class RobotPlayer {
                                 guardedPASTRs++;
                                 path = RobotUtil.bugPath(rc.getLocation(), guardLocation, map);
                                 hasOrders = true;
-                                System.out.println("Guard Created");
                                 orderType = orderTypes.guardPasture;
                                 rc.broadcast(2001, rc.readBroadcast(2001) + 1);
                             }
                             //
                             if(hasOrders) {
-                            	if(rc.getRobot().getID() == 1031){
-                            		System.out.println(orderType);
-                            	}
+                            	
                                 if (orderType == orderTypes.makePasture) {
-                                	if(rc.getRobot().getID() == 1031){
-                                		System.out.println(corner);
-                                	}
+                                	
                                     if (rc.getLocation().x != corner.x || rc.getLocation().y != corner.y) {
                                         Direction dir = path.get(0);
-                                        if(rc.getRobot().getID() == 1031){
-                                        	System.out.println("1031 "+ rc.getLocation().add(dir));
-                                        }
+                                        
                                         if (rc.canMove(dir)) {
                                             path.remove(0);
                                             rc.setIndicatorString(0, "" + dir);
@@ -156,8 +146,7 @@ public class RobotPlayer {
                                         rc.construct(RobotType.PASTR);
                                     }
                                 }else if(orderType == orderTypes.guardPasture){
-                                    if (rc.getLocation().distanceSquaredTo(guardLocation) < 4) {
-                                    	System.out.println(rc.getRobot().getID() + " made it to its guard location");
+                                    if (rc.getLocation().distanceSquaredTo(guardLocation) > 4) {
                                         Direction dir = path.get(0);
                                         if (rc.canMove(dir)) {
                                             path.remove(0);
