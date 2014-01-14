@@ -155,14 +155,14 @@ public class RobotPlayer {
                                             rc.move(dir);
                                         }
                                     } else {
-                                        int caseNum = rand.nextInt() % 4;
+                                        int caseNum = rand.nextInt() % 8;
                                         if(caseNum == 0){
                                         	MapLocation target = new MapLocation(guardLocation.x + 2, guardLocation.y +2);
                                         	if(rc.canAttackSquare(target)){
                                         		rc.attackSquare(target);
                                         	}
                                         }else if(caseNum == 1){
-                                        	MapLocation target = new MapLocation(guardLocation.x, guardLocation.y +2);
+                                        	MapLocation target = new MapLocation(guardLocation.x + 2, guardLocation.y +1);
                                         	if(rc.canAttackSquare(target)){
                                         		rc.attackSquare(target);
                                         	}
@@ -171,8 +171,28 @@ public class RobotPlayer {
                                         	if(rc.canAttackSquare(target)){
                                         		rc.attackSquare(target);
                                         	}
+                                        }else if(caseNum == 3){
+                                        	MapLocation target = new MapLocation(guardLocation.x + 1, guardLocation.y);
+                                        	if(rc.canAttackSquare(target)){
+                                        		rc.attackSquare(target);
+                                        	}
+                                        }else if(caseNum == 4){
+                                        	MapLocation target = new MapLocation(guardLocation.x + 1, guardLocation.y + 2);
+                                        	if(rc.canAttackSquare(target)){
+                                        		rc.attackSquare(target);
+                                        	}
+                                        }else if(caseNum == 5){
+                                        	MapLocation target = new MapLocation(guardLocation.x , guardLocation.y );
+                                        	if(rc.canAttackSquare(target)){
+                                        		rc.attackSquare(target);
+                                        	}
+                                        }else if(caseNum == 6){
+                                        	MapLocation target = new MapLocation(guardLocation.x , guardLocation.y + 2);
+                                        	if(rc.canAttackSquare(target)){
+                                        		rc.attackSquare(target);
+                                        	}
                                         }else{
-                                        	MapLocation target = new MapLocation(guardLocation.x , guardLocation.y);
+                                        	MapLocation target = new MapLocation(guardLocation.x , guardLocation.y + 1);
                                         	if(rc.canAttackSquare(target)){
                                         		rc.attackSquare(target);
                                         	}
