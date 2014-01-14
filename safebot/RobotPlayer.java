@@ -55,6 +55,7 @@ public class RobotPlayer {
                                 map[newPASTRLoc.x+1][newPASTRLoc.y+1] = 2;
                             }
                             numPASTRs = numOfNewPASTRs;
+                            System.out.println("NUM PASTRS: " + numPASTRs);
                         }
                         
 					}
@@ -95,7 +96,6 @@ public class RobotPlayer {
                             map[newPASTRLoc.x+1][newPASTRLoc.y+1] = 2;
                         }
                         numPASTRs = numOfNewPASTRs;
-                        System.out.println("NUM PASTRS: " + numPASTRs);
                     }
                     // wait for HQ to broadcast positions of corners, then start
                     if (!start) {
@@ -112,9 +112,12 @@ public class RobotPlayer {
                                 corner = corners.get((rc.getRobot().getID() * rand.nextInt(corners.size())) % corners.size());
                                 path = RobotUtil.bugPath(rc.getLocation(), corner, map);
                                 hasOrders = true;
+                                if(rc.getRobot().getID() == 1031){
+                                	System.out.println("1031 Goal is "+corner + " path is of length " +path.size());
+                                }
                                 orderType = orderTypes.makePasture;
                                 rc.broadcast(2000, rc.readBroadcast(2000) + 1);
-                            }else if(rc.readBroadcast(100) > rc.readBroadcast(2001)){//make a guard bot
+                            }else if(rc.readBroadcast(100) > rc.readBroadcast(2001) && !hasOrders){//make a guard bot
                                 guardLocation = RobotUtil.intToMapLoc(rc.readBroadcast(100+guardedPASTRs));
                                 guardedPASTRs++;
                                 path = RobotUtil.bugPath(rc.getLocation(), guardLocation, map);
@@ -125,13 +128,23 @@ public class RobotPlayer {
                             }
                             //
                             if(hasOrders) {
+                            	if(rc.getRobot().getID() == 1031){
+                            		System.out.println(orderType);
+                            	}
                                 if (orderType == orderTypes.makePasture) {
+                                	if(rc.getRobot().getID() == 1031){
+                                		System.out.println(corner);
+                                	}
                                     if (rc.getLocation().x != corner.x || rc.getLocation().y != corner.y) {
                                         Direction dir = path.get(0);
+                                        if(rc.getRobot().getID() == 1031){
+                                        	System.out.println("1031 "+ rc.getLocation().add(dir));
+                                        }
                                         if (rc.canMove(dir)) {
                                             path.remove(0);
                                             rc.setIndicatorString(0, "" + dir);
                                             rc.setIndicatorString(1, "" + rc.getLocation());
+                                            
                                             rc.move(dir);
                                         }
                                     } else {
