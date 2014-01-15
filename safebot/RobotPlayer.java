@@ -15,16 +15,19 @@ public class RobotPlayer {
     static MapLocation maxCows = null;
     static Boolean firstRun = true;
     static ArrayList<MapLocation> corners= new ArrayList<MapLocation>();
+    static ArrayList<MapLocation> cornersAvailableToMake = new ArrayList<MapLocation>();
+    static ArrayList<MapLocation> cornersAvailableToGuard = new ArrayList<MapLocation>();
     static ArrayList<Direction> path = new ArrayList<Direction>();
     static int numPASTRs = 0;
-    static int guardedPASTRs = 0;
+    static int numAlreadySentToMake = 0;
+    static int numAlreadySentToGuard = 0;
     public static enum orderTypes{
         makePasture, guardPasture;
     }
     static orderTypes orderType;
     static int channelPASTRS = 1000;
-    static int channelPASTRMaker = 2000;
-    static int channelPASTRGuarder = 2001;
+    static int channelSentPASTRs = 4000;
+    static int channelSentGuard = 5000;
     
 
 
@@ -97,30 +100,71 @@ public class RobotPlayer {
                         }
                         numPASTRs = numOfNewPASTRs;
                     }
+                    
+                   
                     // wait for HQ to broadcast positions of corners, then start
                     if (!start) {
                         if(rc.readBroadcast(0) != 0) {
                             for(int i = 0; i < rc.readBroadcast(0); i++) {
                                 corners.add(RobotUtil.intToMapLoc(rc.readBroadcast(i + 1)));
+                                cornersAvailableToMake.add(RobotUtil.intToMapLoc(rc.readBroadcast(i + 1)));
                             }
                             start = true;
                         }
                     } else {//Initialization is finished, execute strategies here
                         if (rc.isActive()) {
+                        	//updates available pasture locations
+                        	if(numAlreadySentToMake < rc.readBroadcast(channelSentPASTRs)){
+                        		for(int i = numAlreadySentToMake + 1; i <= rc.readBroadcast(channelSentPASTRs); i++){
+                        			MapLocation sent = RobotUtil.intToMapLoc(rc.readBroadcast(channelSentPASTRs + i ));
+                        			for(int j = 0; j < cornersAvailableToMake.size(); j++){
+                        				if(sent.equals(cornersAvailableToMake.get(j))){
+                        					cornersAvailableToGuard.add(cornersAvailableToMake.get(j));
+                        					cornersAvailableToMake.remove(j);
+                        					break;
+                        				}
+                        			}
+
+								}
+                        	}
+                        	numAlreadySentToMake = rc.readBroadcast(channelSentPASTRs);
+                        	
+                        	if(numAlreadySentToGuard < rc.readBroadcast(channelSentGuard)){
+                        		for(int i = numAlreadySentToGuard + 1; i <= rc.readBroadcast(channelSentGuard); i++){
+                        			MapLocation sent = RobotUtil.intToMapLoc(rc.readBroadcast(channelSentGuard + i ));
+                        			for(int j = 0; j < cornersAvailableToGuard.size(); j++){
+                        				if(sent.equals(cornersAvailableToGuard.get(j))){
+                        					cornersAvailableToGuard.remove(j);
+                        					break;
+                        				}
+									}
+
+								}
+                        	}
+                        	numAlreadySentToGuard = rc.readBroadcast(channelSentGuard);
+                        	
                             //make a makePasture bot
-                            if(corners.size() > 0 && !hasOrders && rc.readBroadcast(2000) < corners.size()) {
-                                corner = corners.get((rc.getRobot().getID() * rand.nextInt(corners.size())) % corners.size());
+                            if(cornersAvailableToMake.size() > 0 && !hasOrders) {
+                            	//get a random corner and delete it from cornersAvailableToMake, find a path
+                                corner = cornersAvailableToMake.remove((rc.getRobot().getID() * rand.nextInt(cornersAvailableToMake.size())) % cornersAvailableToMake.size());
                                 path = RobotUtil.bugPath(rc.getLocation(), corner, map);
+                                //number of bots already sent to make a corner is incremented 
+                                //and the corner is broadcasted so others know its already gonna be made a pastr
+                                numAlreadySentToMake++;
+                                rc.broadcast(channelSentPASTRs, numAlreadySentToMake);
+                                rc.broadcast(channelSentPASTRs + numAlreadySentToMake, RobotUtil.mapLocToInt(corner));
                                 hasOrders = true;
-                                orderType = orderTypes.makePasture;
-                                rc.broadcast(2000, rc.readBroadcast(2000) + 1);
-                            }else if(rc.readBroadcast(100) > rc.readBroadcast(2001) && !hasOrders){//make a guard bot
-                                guardLocation = RobotUtil.intToMapLoc(rc.readBroadcast(100+guardedPASTRs));
-                                guardedPASTRs++;
+                                orderType = orderTypes.makePasture;;
+                            }else if(cornersAvailableToGuard.size() > 0 && !hasOrders){//make a guard bot
+                                guardLocation = cornersAvailableToGuard.remove(0);
                                 path = RobotUtil.bugPath(rc.getLocation(), guardLocation, map);
+                                //number of bots already sent to guard a corner is incremented 
+                                //and the corner is broadcasted so others know its already gonna be guarded
+                                numAlreadySentToGuard++;
+                                rc.broadcast(channelSentGuard, numAlreadySentToGuard);
+                                rc.broadcast(channelSentGuard + numAlreadySentToGuard, RobotUtil.mapLocToInt(guardLocation));
                                 hasOrders = true;
                                 orderType = orderTypes.guardPasture;
-                                rc.broadcast(2001, rc.readBroadcast(2001) + 1);
                             }
                             //
                             if(hasOrders) {
