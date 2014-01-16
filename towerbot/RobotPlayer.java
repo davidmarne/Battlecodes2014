@@ -13,12 +13,16 @@ public class RobotPlayer {
 		Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST};
 		int[][] map;
         while(true) {
+        	
 			if (rc.getType() == RobotType.HQ) {
 				try {					
 					//Check if a robot is spawnable and spawn one if it is
 					if (rc.isActive() && rc.senseRobotCount() < 1) {
+						for(Direction d : directions){
+			        		System.out.println(d + " " + d.ordinal());
+			        	}
 						Direction toEnemy = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-                        map = RobotUtil.assessMap2(rc, new MapLocation(10,10));
+                        map = RobotUtil.assessMap3(rc, new MapLocation(10,10));
                         System.out.print(Clock.getRoundNum());
                         RobotUtil.logMap(map);
 						if (rc.senseObjectAtLocation(rc.getLocation().add(toEnemy)) == null) {

@@ -58,7 +58,6 @@ public class RobotPlayer {
                                 map[newPASTRLoc.x+1][newPASTRLoc.y+1] = 2;
                             }
                             numPASTRs = numOfNewPASTRs;
-                            System.out.println("NUM PASTRS: " + numPASTRs);
                         }
                         
 					}
@@ -148,6 +147,7 @@ public class RobotPlayer {
                             	//get a random corner and delete it from cornersAvailableToMake, find a path
                                 corner = cornersAvailableToMake.remove((rc.getRobot().getID() * rand.nextInt(cornersAvailableToMake.size())) % cornersAvailableToMake.size());
                                 path = RobotUtil.bugPath(rc.getLocation(), corner, map);
+                                System.out.println(rc.getRobot().getID() + " is being sent to "+corner + " to make a PASTR");
                                 //number of bots already sent to make a corner is incremented 
                                 //and the corner is broadcasted so others know its already gonna be made a pastr
                                 numAlreadySentToMake++;
@@ -158,6 +158,7 @@ public class RobotPlayer {
                             }else if(cornersAvailableToGuard.size() > 0 && !hasOrders){//make a guard bot
                                 guardLocation = cornersAvailableToGuard.remove(0);
                                 path = RobotUtil.bugPath(rc.getLocation(), guardLocation, map);
+                                System.out.println(rc.getRobot().getID() + " is being sent to "+ guardLocation + " to guard a PASTR");
                                 //number of bots already sent to guard a corner is incremented 
                                 //and the corner is broadcasted so others know its already gonna be guarded
                                 numAlreadySentToGuard++;
@@ -190,7 +191,7 @@ public class RobotPlayer {
                                         rc.construct(RobotType.PASTR);
                                     }
                                 }else if(orderType == orderTypes.guardPasture){
-                                    if (rc.getLocation().distanceSquaredTo(guardLocation) > 4) {
+                                    if (rc.getLocation().distanceSquaredTo(guardLocation) > 9) {
                                         Direction dir = path.get(0);
                                         if (rc.canMove(dir)) {
                                             path.remove(0);
@@ -199,48 +200,50 @@ public class RobotPlayer {
                                             rc.move(dir);
                                         }
                                     } else {
-                                        int caseNum = rand.nextInt() % 8;
-                                        if(caseNum == 0){
-                                        	MapLocation target = new MapLocation(guardLocation.x + 2, guardLocation.y +2);
-                                        	if(rc.canAttackSquare(target)){
-                                        		rc.attackSquare(target);
+                                    	//while(true){
+                                    		int caseNum = rand.nextInt() % 8;
+                                        	if(caseNum == 0){
+                                        		MapLocation target = new MapLocation(guardLocation.x + 2, guardLocation.y +2);
+                                        		if(rc.canAttackSquare(target) && !target.equals(rc.getLocation())){
+                                        			rc.attackSquare(target);
+                                        		}
+                                        	}else if(caseNum == 1){
+                                        		MapLocation target = new MapLocation(guardLocation.x + 2, guardLocation.y +1);
+                                        		if(rc.canAttackSquare(target) && !target.equals(rc.getLocation())){
+                                        			rc.attackSquare(target);
+                                        		}
+                                        	}else if(caseNum == 2){
+                                        		MapLocation target = new MapLocation(guardLocation.x + 2, guardLocation.y);
+                                        		if(rc.canAttackSquare(target) && !target.equals(rc.getLocation())){
+                                        			rc.attackSquare(target);
+                                        		}
+                                        	}else if(caseNum == 3){
+                                        		MapLocation target = new MapLocation(guardLocation.x + 1, guardLocation.y);
+                                        		if(rc.canAttackSquare(target) && !target.equals(rc.getLocation())){
+                                        			rc.attackSquare(target);
+                                        		}
+                                        	}else if(caseNum == 4){
+                                        		MapLocation target = new MapLocation(guardLocation.x + 1, guardLocation.y + 2);
+                                        		if(rc.canAttackSquare(target) && !target.equals(rc.getLocation())){
+                                        			rc.attackSquare(target);
+                                        		}
+                                        	}else if(caseNum == 5){
+                                        		MapLocation target = new MapLocation(guardLocation.x , guardLocation.y );
+                                        		if(rc.canAttackSquare(target) && !target.equals(rc.getLocation())){
+                                        			rc.attackSquare(target);
+                                        		}
+                                        	}else if(caseNum == 6){
+                                        		MapLocation target = new MapLocation(guardLocation.x , guardLocation.y + 2);
+                                        		if(rc.canAttackSquare(target) && !target.equals(rc.getLocation())){
+                                        			rc.attackSquare(target);
+                                        		}
+                                        	}else{
+                                        		MapLocation target = new MapLocation(guardLocation.x , guardLocation.y + 1);
+                                        		if(rc.canAttackSquare(target) && !target.equals(rc.getLocation())){
+                                        			rc.attackSquare(target);
+                                        		}
                                         	}
-                                        }else if(caseNum == 1){
-                                        	MapLocation target = new MapLocation(guardLocation.x + 2, guardLocation.y +1);
-                                        	if(rc.canAttackSquare(target)){
-                                        		rc.attackSquare(target);
-                                        	}
-                                        }else if(caseNum == 2){
-                                        	MapLocation target = new MapLocation(guardLocation.x + 2, guardLocation.y);
-                                        	if(rc.canAttackSquare(target)){
-                                        		rc.attackSquare(target);
-                                        	}
-                                        }else if(caseNum == 3){
-                                        	MapLocation target = new MapLocation(guardLocation.x + 1, guardLocation.y);
-                                        	if(rc.canAttackSquare(target)){
-                                        		rc.attackSquare(target);
-                                        	}
-                                        }else if(caseNum == 4){
-                                        	MapLocation target = new MapLocation(guardLocation.x + 1, guardLocation.y + 2);
-                                        	if(rc.canAttackSquare(target)){
-                                        		rc.attackSquare(target);
-                                        	}
-                                        }else if(caseNum == 5){
-                                        	MapLocation target = new MapLocation(guardLocation.x , guardLocation.y );
-                                        	if(rc.canAttackSquare(target)){
-                                        		rc.attackSquare(target);
-                                        	}
-                                        }else if(caseNum == 6){
-                                        	MapLocation target = new MapLocation(guardLocation.x , guardLocation.y + 2);
-                                        	if(rc.canAttackSquare(target)){
-                                        		rc.attackSquare(target);
-                                        	}
-                                        }else{
-                                        	MapLocation target = new MapLocation(guardLocation.x , guardLocation.y + 1);
-                                        	if(rc.canAttackSquare(target)){
-                                        		rc.attackSquare(target);
-                                        	}
-                                        }
+                                    	//}
                                     }
                                 }
                             }
