@@ -43,8 +43,8 @@ public class RobotUtil {
                     map[ogMapWidth + 1 - i][mapHeight + 1 - j] = tile;
                 } else {
                     tile = rc.senseTerrainTile(new MapLocation(i - 1, j - 1)).ordinal();
-                    map[i][j] = tile > 2 ? 2 : tile;
-                    map[ogMapWidth + 1 - i][mapHeight + 1 - j] = tile > 2 ? 2 : tile;
+                    map[i][j] = tile;
+                    map[ogMapWidth + 1 - i][mapHeight + 1 - j] = tile;
                 }
                 map[i][j] = tile > 2 ? 2 : tile;
                 map[ogMapWidth + 1 - i][mapHeight + 1 - j] = tile > 2 ? 2 : tile;
@@ -53,6 +53,79 @@ public class RobotUtil {
         }
         return map;
     }
+
+    public static int[][] assessMap2(RobotController rc, MapLocation goal) {
+        ArrayList<MapLocation> queue = new ArrayList<MapLocation>();
+        int mapWidth = rc.getMapWidth();
+        int[][] map = new int[mapWidth][mapWidth];
+        int currentX;
+        int currentY;
+
+        MapLocation currentLocation;
+
+        // we want map locations in the queue
+        queue.add(goal);
+        // and the distance values / direction in the graph __|_
+        while(!queue.isEmpty()) {
+            currentLocation = queue.remove(0);
+            currentX = currentLocation.x;
+            currentY = currentLocation.y;
+            // check the northern square
+            if(currentY != 0 && map[currentX][currentY-1] == 0 && rc.senseTerrainTile(new MapLocation(currentX, currentY-1)).ordinal() != 2) {
+                map[currentX][currentY-1] = createMeta(decodeVal(map[currentX][currentY]) + 1, 4);
+                queue.add(new MapLocation(currentX, currentY-1));
+            }
+            // check the north eastern square
+            if(currentY != 0 && currentX != mapWidth-1 && map[currentX+1][currentY-1] == 0 && rc.senseTerrainTile(new MapLocation(currentX+1, currentY-1)).ordinal() != 2) {
+                map[currentX+1][currentY-1] = createMeta(decodeVal(map[currentX][currentY]) + 1, 5);
+                queue.add(new MapLocation(currentX+1, currentY-1));
+            }
+            // check the eastern square
+            if(currentX != mapWidth-1 && map[currentX+1][currentY] == 0 && rc.senseTerrainTile(new MapLocation(currentX+1, currentY)).ordinal() != 2) {
+                map[currentX+1][currentY] = createMeta(decodeVal(map[currentX][currentY]) + 1, 6);
+                queue.add(new MapLocation(currentX+1, currentY));
+            }
+            // check the south eastern square
+            if(currentX != mapWidth-1 && currentY != mapWidth-1 && map[currentX+1][currentY+1] == 0 && rc.senseTerrainTile(new MapLocation(currentX+1, currentY+1)).ordinal() != 2) {
+                map[currentX+1][currentY+1] = createMeta(decodeVal(map[currentX][currentY]) + 1, 7);
+                queue.add(new MapLocation(currentX+1, currentY+1));
+            }
+            // check the southern square
+            if(currentY != mapWidth-1 && map[currentX][currentY+1] == 0 && rc.senseTerrainTile(new MapLocation(currentX, currentY+1)).ordinal() != 2) {
+                map[currentX][currentY+1] = createMeta(decodeVal(map[currentX][currentY]) + 1, 0);
+                queue.add(new MapLocation(currentX, currentY+1));
+            }
+            // check the south western square
+            if(currentX != 0 && currentY != mapWidth-1 && map[currentX-1][currentY+1] == 0 && rc.senseTerrainTile(new MapLocation(currentX-1, currentY+1)).ordinal() != 2) {
+                map[currentX-1][currentY+1] = createMeta(decodeVal(map[currentX][currentY]) + 1, 1);
+                queue.add(new MapLocation(currentX-1, currentY+1));
+            }
+            // check the western square
+            if(currentX != 0 && map[currentX-1][currentY] == 0 && rc.senseTerrainTile(new MapLocation(currentX-1, currentY)).ordinal() != 2) {
+                map[currentX-1][currentY] = createMeta(decodeVal(map[currentX][currentY]) + 1, 2);
+                queue.add(new MapLocation(currentX-1, currentY));
+            }
+            // check the north western square
+            if(currentX != 0 && currentY != 0 &&map[currentX-1][currentY-1] == 0 && rc.senseTerrainTile(new MapLocation(currentX-1, currentY-1)).ordinal() != 2) {
+                map[currentX-1][currentY-1] = createMeta(decodeVal(map[currentX][currentY]) + 1, 3);
+                queue.add(new MapLocation(currentX-1, currentY-1));
+            }
+        }
+        return map;
+    }
+
+    public static int createMeta(int val, int dir) {
+        return (val * 100) + dir;
+    }
+
+    public static int decodeVal(int meta) {
+        return meta / 100;
+    }
+
+    public static int decodeDir(int meta) {
+        return meta % 10;
+    }
+
 
     public static ArrayList<Direction> bugPath(MapLocation start, MapLocation destination, int[][] map) throws GameActionException {
         Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST,

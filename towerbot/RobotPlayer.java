@@ -1,6 +1,7 @@
 package towerbot;
 
 import battlecode.common.*;
+import safebot.*;
 
 import java.util.Random;
 
@@ -10,13 +11,16 @@ public class RobotPlayer {
 	public static void run(RobotController rc) {
 		rand = new Random();
 		Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST};
-		
-		while(true) {
+		int[][] map;
+        while(true) {
 			if (rc.getType() == RobotType.HQ) {
 				try {					
 					//Check if a robot is spawnable and spawn one if it is
-					if (rc.isActive() && rc.senseRobotCount() < 25) {
+					if (rc.isActive() && rc.senseRobotCount() < 1) {
 						Direction toEnemy = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
+                        map = RobotUtil.assessMap2(rc, new MapLocation(10,10));
+                        System.out.print(Clock.getRoundNum());
+                        RobotUtil.logMap(map);
 						if (rc.senseObjectAtLocation(rc.getLocation().add(toEnemy)) == null) {
 							rc.spawn(toEnemy);
 						}
@@ -62,6 +66,14 @@ public class RobotPlayer {
 			rc.yield();
 		}
 
-        
+//        public static MapLocation findMaxCowLocation() {
+//            double[][] cowCoords = rc.senseCowGrowth();
+//            int xLoc = 0;
+//            int yLoc = 0;
+//            // if the team is A - top left team
+//
+//
+//            return new MapLocation(xLoc, yLoc);
+//        }
 	}
 }
