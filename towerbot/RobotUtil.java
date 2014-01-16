@@ -132,8 +132,7 @@ public class RobotUtil {
 
 
     public static ArrayList<Direction> bugPath(MapLocation start, MapLocation destination, int[][] map) throws GameActionException {
-        Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST,
-                Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST};
+        
         ArrayList<Direction> path = new ArrayList<Direction>();
         MapLocation currentLocation = start;
         MapLocation targetLocation;
@@ -216,7 +215,9 @@ public class RobotUtil {
     		for(int j = 0; j < mapSize; j++){
     			colVal += growthMap[i][j];
     			rowVal += growthMap[j][i];
+    			//System.out.print(growthMap[j][i] + " ");
     		}
+    		//System.out.println();
     		colGrowth[i] = colVal;
     		rowGrowth[i] = rowVal;
     	}
@@ -226,8 +227,9 @@ public class RobotUtil {
     	int growthYLoc = 0;
     	for(int i = 0; i < rowGrowth.length; i++){
     		for(int j = 0; j < colGrowth.length; j++){
-    			if(colGrowth[i] + rowGrowth[j] > maxGrowth && rc.senseTerrainTile(new MapLocation(i,j)).ordinal() != 2){
+    			if((colGrowth[i] + rowGrowth[j]) > maxGrowth && rc.senseTerrainTile(new MapLocation(i,j)).ordinal() != 2){
     				maxGrowth = rowGrowth[i] + colGrowth[j];
+    				//System.out.println(maxGrowth);
     				growthXLoc = i;
     				growthYLoc = j;	
     			}
