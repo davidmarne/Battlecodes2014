@@ -1,7 +1,6 @@
 package towerbot;
 
 import battlecode.common.*;
-import safebot.*;
 
 import java.util.Random;
 
@@ -10,23 +9,35 @@ public class RobotPlayer {
 	
 	public static void run(RobotController rc) {
 		rand = new Random();
-		Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST};
-		int[][] map;
+		Direction[] directions = Direction.values();
+		int mapWidth = rc.getMapWidth();
+		int[][] map = new int[mapWidth][mapWidth];
+		MapLocation goal = new MapLocation(0,0);
+		boolean first = true;
+		MapLocation currentLocation;
+		
         while(true) {
         	
 			if (rc.getType() == RobotType.HQ) {
 				try {					
 					//Check if a robot is spawnable and spawn one if it is
-					if (rc.isActive() && rc.senseRobotCount() < 1) {
-						for(Direction d : directions){
-			        		System.out.println(d + " " + d.ordinal());
-			        	}
-						Direction toEnemy = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-                        map = RobotUtil.assessMap3(rc, new MapLocation(10,10));
-                        System.out.print(Clock.getRoundNum());
-                        RobotUtil.logMap(map);
-						if (rc.senseObjectAtLocation(rc.getLocation().add(toEnemy)) == null) {
-							rc.spawn(toEnemy);
+					if (rc.isActive() && rc.senseRobotCount() < 25) {
+						if(rc.readBroadcast(0) == 0){
+							goal = RobotUtil.sensePASTRGoal(rc);
+							System.out.println("GOAL IS: " + goal);
+	                        map = RobotUtil.assessMapWithDirection(rc, goal, map);
+	                        RobotUtil.broadcastMap(rc, map);
+	                        rc.broadcast(0, 1);
+	                        System.out.println("ROUND: " + Clock.getRoundNum());
+	                        for(Direction d: directions){
+	                        	System.out.println(d + ": "+ d.ordinal());
+	                        }
+	                        RobotUtil.logMap(map);
+						}else{
+							Direction toGoal = rc.getLocation().directionTo(goal);
+							if (rc.senseObjectAtLocation(rc.getLocation().add(toGoal)) == null) {
+								rc.spawn(toGoal);
+							}
 						}
 					}
 				} catch (Exception e) {
@@ -37,33 +48,33 @@ public class RobotPlayer {
 			if (rc.getType() == RobotType.SOLDIER) {
 				try {
 					if (rc.isActive()) {
-						int action = (rc.getRobot().getID()*rand.nextInt(101) + 50)%101;
-						//Construct a PASTR
-						if (action < 1 && rc.getLocation().distanceSquaredTo(rc.senseHQLocation()) > 2) {
-							rc.construct(RobotType.PASTR);
-						//Attack a random nearby enemy
-						} else if (action < 30) {
-							Robot[] nearbyEnemies = rc.senseNearbyGameObjects(Robot.class,10,rc.getTeam().opponent());
-							if (nearbyEnemies.length > 0) {
-								RobotInfo robotInfo = rc.senseRobotInfo(nearbyEnemies[0]);
-								rc.attackSquare(robotInfo.location);
+						if(first){
+							if(rc.readBroadcast(0) == 1){
+								map = RobotUtil.readMapFromBroadcast(rc);
+								first = false;
 							}
-						//Move in a random direction
-						} else if (action < 80) {
-							Direction moveDirection = directions[rand.nextInt(8)];
-							if (rc.canMove(moveDirection)) {
-								rc.move(moveDirection);
+						}else{
+							currentLocation = rc.getLocation();
+							
+							if(rc.readBroadcast(10000) < 2){
+								if(rc.getLocation().equals(goal)){
+									rc.construct(RobotType.PASTR);
+									rc.broadcast(10000, 1);
+								}else if(rc.readBroadcast(10000) == 1 && rc.getLocation().distanceSquaredTo(goal) < 4){
+									rc.construct(RobotType.NOISETOWER);
+									rc.broadcast(10000, 2);
+								}
 							}
-						//Sneak towards the enemy
-						} else {
-							Direction toEnemy = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-							if (rc.canMove(toEnemy)) {
-								rc.sneak(toEnemy);
+							
+							int intToGoal = map[currentLocation.x][currentLocation.y] - 1;
+							Direction dirToGoal = directions[intToGoal];
+							if(rc.canMove(dirToGoal)){
+								rc.move(dirToGoal);
 							}
 						}
 					}
 				} catch (Exception e) {
-					System.out.println("Soldier Exception");
+					//System.out.println("Soldier Exception");
 				}
 			}
 			
