@@ -72,14 +72,7 @@ public class RobotPlayer {
 							currentLocation = rc.getLocation();
 							//if a pastr and noisetower havent been made/assigned to a bot
 							if(rc.readBroadcast(10000) < 2){
-								if(rc.getRobot().getID() == 644){
-									System.out.println("CL "+currentLocation);
-									System.out.println("Goal " + goal);
-								}
 								if(currentLocation.equals(goal)){
-									if(rc.getRobot().getID() == 644){
-										System.out.println("inside");
-										}
 									rc.construct(RobotType.PASTR);
 									rc.broadcast(10000, 1);
 								}else if(rc.readBroadcast(10000) == 1 && currentLocation.distanceSquaredTo(goal) < 4){
