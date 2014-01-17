@@ -25,7 +25,7 @@ public class RobotPlayer {
 						}
 					}
 				} catch (Exception e) {
-					System.out.println("HQ Exception");
+					//System.out.println("HQ Exception");
 				}
 			}
 			
