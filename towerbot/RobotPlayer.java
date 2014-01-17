@@ -39,16 +39,14 @@ public class RobotPlayer {
 	                        for(Direction d: directions){
 	                        	//System.out.println(d + ": "+ d.ordinal());
 	                        }
-	                        //RobotUtil.logMap(map);
+	                        RobotUtil.logMap(map);
 						}else{
 							Direction toGoal = rc.getLocation().directionTo(goal);
 							if (rc.senseObjectAtLocation(rc.getLocation().add(toGoal)) == null && rc.senseTerrainTile(currentLocation.add(toGoal)).ordinal() != 2) {
 								rc.spawn(toGoal);
 							}else{
 								while(true){
-									System.out.println("1");
 									Direction dir = directions[rand.nextInt() % 8];
-									System.out.println("2");
 									if(rc.senseObjectAtLocation(currentLocation.add(dir)) == null){
 										rc.spawn(dir);
 										break;

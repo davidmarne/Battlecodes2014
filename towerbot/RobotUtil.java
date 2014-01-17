@@ -63,6 +63,10 @@ public class RobotUtil {
 
         MapLocation currentLocation;
         map[goal.x][goal.y] = 9;
+        MapLocation temp = rc.senseHQLocation();
+        map[temp.x][temp.y] = 9;
+        temp = rc.senseEnemyHQLocation();
+        map[temp.x][temp.y] = 9;
         // we want map locations in the queue
         queue.add(goal);
         // and the distance values / direction in the graph __|_
