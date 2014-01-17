@@ -58,9 +58,7 @@ public class RobotPlayer {
 				} catch (Exception e) {
 					//System.out.println("HQ Exception");
 				}
-			}
-			
-			if (rc.getType() == RobotType.SOLDIER) {
+			} else if (rc.getType() == RobotType.SOLDIER) {
 				try {
 					if (rc.isActive()) {
 						if(first){
@@ -83,29 +81,70 @@ public class RobotPlayer {
 									int intToGoal = map[currentLocation.x][currentLocation.y] - 1;
 									Direction dirToGoal = directions[intToGoal];
 									if(rc.canMove(dirToGoal)){
-										rc.move(dirToGoal);
+										rc.sneak(dirToGoal);
 									}
 								}
 							}else if(currentLocation.distanceSquaredTo(goal) > 9){//if far away move towards goal
 								int intToGoal = map[currentLocation.x][currentLocation.y] - 1;
 								Direction dirToGoal = directions[intToGoal];
 								if(rc.canMove(dirToGoal)){
-									rc.move(dirToGoal);
+									rc.sneak(dirToGoal);
 								}
 							}else{//else move randomly
 								Direction moveDirection = directions[rand.nextInt(8)];
 								if (rc.canMove(moveDirection)) {
-									rc.move(moveDirection);
+									rc.sneak(moveDirection);
 								}
 							}
 						}
-					}else if (rc.getType() == RobotType.NOISETOWER){
-						
 					}
 				} catch (Exception e) {
 					//System.out.println("Soldier Exception");
 				}
-			}
+			} else if (rc.getType() == RobotType.NOISETOWER) {
+                try {
+                    if(rc.isActive()){
+                        currentLocation = rc.getLocation();
+                        int maxAttack = (int)Math.sqrt(rc.getType().attackRadiusMaxSquared);
+                        //for(int i = 0; i < 10; i++) {
+                        for(int i = maxAttack; i > 4; i-=2){
+                            for (int j = 0; j < 360; j +=30) {
+                                if(rc.isActive()){
+                                    if(j%90 == 0){
+                                        MapLocation squareToAttack = currentLocation.add(i, i);
+                                        if(rc.canAttackSquare(squareToAttack)) {
+                                            rc.attackSquare(squareToAttack);
+                                        }
+                                    } else if (j % 90 == 30) {
+                                        double len = i / Math.sqrt(4/3);
+                                        double xVal = Math.cos(30) * len;
+                                        double yVal = Math.sin(30) * len;
+
+                                        MapLocation squareToAttack = currentLocation.add((int)xVal, (int)yVal);
+                                        if(rc.canAttackSquare(squareToAttack)) {
+                                            rc.attackSquare(squareToAttack);
+                                        }
+                                    } else {
+                                        double len = i / Math.sqrt(4/3);
+                                        double xVal = Math.cos(60) * len;
+                                        double yVal = Math.sin(60) * len;
+
+                                        MapLocation squareToAttack = currentLocation.add((int)xVal, (int)yVal);
+                                        if(rc.canAttackSquare(squareToAttack)) {
+                                            rc.attackSquare(squareToAttack);
+                                        }
+                                    }
+                                }
+                                rc.yield();
+                                rc.yield();
+                            }
+                        }
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
 			
 			rc.yield();
 		}
@@ -118,6 +157,6 @@ public class RobotPlayer {
 //
 //
 //            return new MapLocation(xLoc, yLoc);
-//        }
+//        }º
 	}
 }
