@@ -15,8 +15,8 @@ public class RobotUtil {
         int mapWidth = map.length;
         int mapHeight = map[0].length;
         System.out.print("\n");
-        for (int i = 0; i < mapWidth; i++) {
-            for (int j = 0; j < mapHeight; j++) {
+        for (int i = 0; i < mapHeight; i++) {
+            for (int j = 0; j < mapWidth; j++) {
                 System.out.print(map[j][i] + " ");
             }
             System.out.print("\n");
@@ -58,15 +58,16 @@ public class RobotUtil {
     public static int[][] assessMapWithDirection(RobotController rc, MapLocation goal, int[][] map) {
         ArrayDeque<MapLocation> queue = new ArrayDeque<MapLocation>();
         int mapWidth = map.length;
+        int mapHeight = map[0].length;
         int currentX;
         int currentY;
-
         MapLocation currentLocation;
         map[goal.x][goal.y] = 9;
         MapLocation temp = rc.senseHQLocation();
         map[temp.x][temp.y] = 9;
         temp = rc.senseEnemyHQLocation();
         map[temp.x][temp.y] = 9;
+        
         // we want map locations in the queue
         queue.add(goal);
         // and the distance values / direction in the graph __|_
@@ -93,17 +94,17 @@ public class RobotUtil {
                 queue.add(new MapLocation(currentX+1, currentY));
             }
             // check the south eastern square
-            if(currentX != mapWidth-1 && currentY != mapWidth-1 && map[currentX+1][currentY+1] == 0 && rc.senseTerrainTile(new MapLocation(currentX+1, currentY+1)).ordinal() != 2) {
+            if(currentX != mapWidth-1 && currentY != mapHeight-1 && map[currentX+1][currentY+1] == 0 && rc.senseTerrainTile(new MapLocation(currentX+1, currentY+1)).ordinal() != 2) {
                 map[currentX+1][currentY+1] = 8;
                 queue.add(new MapLocation(currentX+1, currentY+1));
             }
             // check the southern square
-            if(currentY != mapWidth-1 && map[currentX][currentY+1] == 0 && rc.senseTerrainTile(new MapLocation(currentX, currentY+1)).ordinal() != 2) {
+            if(currentY != mapHeight-1 && map[currentX][currentY+1] == 0 && rc.senseTerrainTile(new MapLocation(currentX, currentY+1)).ordinal() != 2) {
                 map[currentX][currentY+1] = 1;
                 queue.add(new MapLocation(currentX, currentY+1));
             }
             // check the south western square
-            if(currentX != 0 && currentY != mapWidth-1 && map[currentX-1][currentY+1] == 0 && rc.senseTerrainTile(new MapLocation(currentX-1, currentY+1)).ordinal() != 2) {
+            if(currentX != 0 && currentY != mapHeight-1 && map[currentX-1][currentY+1] == 0 && rc.senseTerrainTile(new MapLocation(currentX-1, currentY+1)).ordinal() != 2) {
                 map[currentX-1][currentY+1] = 2;
                 queue.add(new MapLocation(currentX-1, currentY+1));
             }
@@ -118,6 +119,7 @@ public class RobotUtil {
                 queue.add(new MapLocation(currentX-1, currentY-1));
             }	
              
+            
         }
         return map;
     }

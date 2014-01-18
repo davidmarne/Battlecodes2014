@@ -11,7 +11,8 @@ public class RobotPlayer {
 		rand = new Random();
 		Direction[] directions = Direction.values();
 		int mapWidth = rc.getMapWidth();
-		int[][] map = new int[mapWidth][mapWidth];
+		int mapHeight = rc.getMapHeight();
+		int[][] map = new int[mapWidth][mapHeight];
 		MapLocation goal = new MapLocation(0,0);
 		boolean first = true;
 		MapLocation currentLocation = null;
@@ -26,7 +27,6 @@ public class RobotPlayer {
 							currentLocation = rc.getLocation();
 							//sense a goal location based on pastr growth
 							goal = RobotUtil.sensePASTRGoal(rc);
-							System.out.println("GOAL IS: " + goal);
 							//Pathing Algorithm
 	                        map = RobotUtil.assessMapWithDirection(rc, goal, map);
 	                        //broadcast the map out for other robots to read
@@ -36,9 +36,7 @@ public class RobotPlayer {
 	                        //System.out.println("ROUND: " + Clock.getRoundNum());
 	                        //let everyone know the goal location
 	                        rc.broadcast(10001, RobotUtil.mapLocToInt(goal));
-	                        for(Direction d: directions){
-	                        	//System.out.println(d + ": "+ d.ordinal());
-	                        }
+	                        
 	                        RobotUtil.logMap(map);
 						}else{
 							Direction toGoal = rc.getLocation().directionTo(goal);
