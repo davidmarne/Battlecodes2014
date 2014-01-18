@@ -36,7 +36,9 @@ public class RobotPlayer {
 	                        //System.out.println("ROUND: " + Clock.getRoundNum());
 	                        //let everyone know the goal location
 	                        rc.broadcast(10001, RobotUtil.mapLocToInt(goal));
-	                        
+	                        for(Direction d:directions){
+	                        	System.out.println(d + " "+ d.ordinal());
+	                        }
 	                        RobotUtil.logMap(map);
 						}else{
 							Direction toGoal = rc.getLocation().directionTo(goal);
@@ -108,7 +110,6 @@ public class RobotPlayer {
                             for (int j = 0; j < 360; j +=30) {
                                 if(rc.isActive()){
                                 	double len = i ;
-                                    System.out.println(Math.cos(j * Math.PI / 180.0));
                                     double xVal = Math.cos(j * Math.PI / 180.0) * len;
                                     double yVal = Math.sin(j * Math.PI / 180.0) * len;
 

@@ -245,9 +245,10 @@ public class RobotUtil {
     }
     
     public static void broadcastMap(RobotController rc, int[][] map) throws GameActionException{
-    	int mapSize = rc.getMapWidth();
-    	for(int i = 0; i < mapSize; i++){
-    		for(int j = 0; j < mapSize; j++){
+    	int mapWidth = map.length;
+    	int mapHeight = map[0].length;
+    	for(int i = 0; i < mapWidth; i++){
+    		for(int j = 0; j < mapHeight; j++){
     			MapLocation ml = new MapLocation(i,j);
     			rc.broadcast(mapLocToInt(ml), map[i][j]);
     		}
@@ -255,10 +256,11 @@ public class RobotUtil {
     }
     
     public static int[][] readMapFromBroadcast(RobotController rc) throws GameActionException{
-    	int mapSize = rc.getMapWidth();
-    	int[][] map = new int[mapSize][mapSize];
-    	for(int i = 0; i < mapSize; i++){
-    		for(int j = 0; j < mapSize; j++){
+    	int mapWidth = rc.getMapWidth();
+    	int mapHeight = rc.getMapHeight();
+    	int[][] map = new int[mapWidth][mapHeight];
+    	for(int i = 0; i < mapWidth; i++){
+    		for(int j = 0; j < mapHeight; j++){
     			map[i][j] = rc.readBroadcast(mapLocToInt(new MapLocation(i,j)));
     		}
     	}
