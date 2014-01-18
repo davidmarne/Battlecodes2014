@@ -106,33 +106,17 @@ public class RobotPlayer {
                     if(rc.isActive()){
                         currentLocation = rc.getLocation();
                         int maxAttack = (int)Math.sqrt(rc.getType().attackRadiusMaxSquared);
-                        //for(int i = 0; i < 10; i++) {
                         for(int i = maxAttack; i > 4; i-=2){
                             for (int j = 0; j < 360; j +=30) {
                                 if(rc.isActive()){
-                                    if(j%90 == 0){
-                                        MapLocation squareToAttack = currentLocation.add(i, i);
-                                        if(rc.canAttackSquare(squareToAttack)) {
-                                            rc.attackSquare(squareToAttack);
-                                        }
-                                    } else if (j % 90 == 30) {
-                                        double len = i / Math.sqrt(4/3);
-                                        double xVal = Math.cos(30) * len;
-                                        double yVal = Math.sin(30) * len;
+                                	double len = i ;
+                                    System.out.println(Math.cos(j * Math.PI / 180.0));
+                                    double xVal = Math.cos(j * Math.PI / 180.0) * len;
+                                    double yVal = Math.sin(j * Math.PI / 180.0) * len;
 
-                                        MapLocation squareToAttack = currentLocation.add((int)xVal, (int)yVal);
-                                        if(rc.canAttackSquare(squareToAttack)) {
-                                            rc.attackSquare(squareToAttack);
-                                        }
-                                    } else {
-                                        double len = i / Math.sqrt(4/3);
-                                        double xVal = Math.cos(60) * len;
-                                        double yVal = Math.sin(60) * len;
-
-                                        MapLocation squareToAttack = currentLocation.add((int)xVal, (int)yVal);
-                                        if(rc.canAttackSquare(squareToAttack)) {
-                                            rc.attackSquare(squareToAttack);
-                                        }
+                                    MapLocation squareToAttack = currentLocation.add((int)xVal, (int)yVal);
+                                    if(rc.canAttackSquare(squareToAttack)) {
+                                        rc.attackSquare(squareToAttack);
                                     }
                                 }
                                 rc.yield();
@@ -157,6 +141,6 @@ public class RobotPlayer {
 //
 //
 //            return new MapLocation(xLoc, yLoc);
-//        }º
+//        }
 	}
 }
