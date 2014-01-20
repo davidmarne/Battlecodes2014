@@ -6,6 +6,9 @@ import java.util.Random;
 
 public class RobotPlayer {
 	static Random rand;
+	public static enum missions{
+        defense, offense;
+    }
 	
 	public static void run(RobotController rc) {
 		rand = new Random();
@@ -16,6 +19,8 @@ public class RobotPlayer {
 		MapLocation goal = new MapLocation(0,0);
 		boolean first = true;
 		MapLocation currentLocation = null;
+		missions robotMission = missions.defense;
+		
 		
         while(true) {
         	
@@ -41,6 +46,22 @@ public class RobotPlayer {
 	                        }
 	                        RobotUtil.logMap(map);
 						}else{
+							//if there isnt a pastr being attacked and our defense is already initialized
+							if(rc.readBroadcast(5000) == 0 && rc.readBroadcast(0) == 2){
+								
+								MapLocation[] pastrLocs = rc.sensePastrLocations(rc.getTeam().opponent());
+								if(pastrLocs.length > 0){
+									goal = pastrLocs[rand.nextInt() % pastrLocs.length];
+									map = RobotUtil.assessMapWithDirection(rc, goal, new int[mapWidth][mapHeight]);
+			                        //broadcast the map out for other robots to read
+			                        RobotUtil.broadcastMap(rc, map);
+			                        RobotUtil.logMap(map);
+			                        rc.broadcast(0, 2);
+									rc.broadcast(10001, RobotUtil.mapLocToInt(goal));
+									rc.broadcast(5000, 1);
+								}
+							}
+							
 							Direction toGoal = rc.getLocation().directionTo(goal);
 							if (rc.senseObjectAtLocation(rc.getLocation().add(toGoal)) == null && rc.senseTerrainTile(currentLocation.add(toGoal)).ordinal() != 2) {
 								rc.spawn(toGoal);
@@ -62,38 +83,74 @@ public class RobotPlayer {
 				try {
 					if (rc.isActive()) {
 						if(first){
-							if(rc.readBroadcast(0) == 1){
+							if(rc.readBroadcast(0) == 1 || rc.readBroadcast(0) == 2){
+								
+								if(rc.readBroadcast(0) == 1){
+									robotMission = missions.defense;
+								}else{
+									System.out.println("OFFENSE ");
+									robotMission = missions.offense;
+								}
 								map = RobotUtil.readMapFromBroadcast(rc);
 								goal = RobotUtil.intToMapLoc(rc.readBroadcast(10001));
 								first = false;
+								if(robotMission == missions.defense){
+									int numDefenders = rc.readBroadcast(10002);
+									if(numDefenders < 12){
+										rc.broadcast(10002, numDefenders + 1);
+									}else{
+										rc.broadcast(0, 2);
+									}
+								}
 							}
 						}else{
 							currentLocation = rc.getLocation();
-							//if a pastr and noisetower havent been made/assigned to a bot
-							if(rc.readBroadcast(10000) < 2){
-								if(currentLocation.equals(goal)){
-									rc.construct(RobotType.PASTR);
-									rc.broadcast(10000, 1);
-								}else if(rc.readBroadcast(10000) == 1 && currentLocation.distanceSquaredTo(goal) < 4){
-									rc.construct(RobotType.NOISETOWER);
-									rc.broadcast(10000, 2);
-								}else{
+							if(robotMission == missions.defense){
+								//if a pastr and noisetower havent been made/assigned to a bot
+								if(rc.readBroadcast(10000) < 2){
+									if(currentLocation.equals(goal)){
+										rc.construct(RobotType.PASTR);
+										rc.broadcast(10000, 1);
+									}else if(rc.readBroadcast(10000) == 1 && currentLocation.distanceSquaredTo(goal) < 4){
+										rc.construct(RobotType.NOISETOWER);
+										rc.broadcast(10000, 2);
+									}else{
+										int intToGoal = map[currentLocation.x][currentLocation.y] - 1;
+										Direction dirToGoal = directions[intToGoal];
+										if(rc.canMove(dirToGoal)){
+											rc.move(dirToGoal);
+										}
+									}
+								}else if(currentLocation.distanceSquaredTo(goal) > 9){//if far away move towards goal
 									int intToGoal = map[currentLocation.x][currentLocation.y] - 1;
 									Direction dirToGoal = directions[intToGoal];
 									if(rc.canMove(dirToGoal)){
 										rc.sneak(dirToGoal);
 									}
+								}else{//else move randomly
+									Direction moveDirection = directions[rand.nextInt(8)];
+									if (rc.canMove(moveDirection)) {
+										rc.move(moveDirection);
+									}
 								}
-							}else if(currentLocation.distanceSquaredTo(goal) > 9){//if far away move towards goal
-								int intToGoal = map[currentLocation.x][currentLocation.y] - 1;
-								Direction dirToGoal = directions[intToGoal];
-								if(rc.canMove(dirToGoal)){
-									rc.sneak(dirToGoal);
-								}
-							}else{//else move randomly
-								Direction moveDirection = directions[rand.nextInt(8)];
-								if (rc.canMove(moveDirection)) {
-									rc.sneak(moveDirection);
+							}else{
+								System.out.println(goal);
+								if(!rc.canAttackSquare(goal)){//if far away move towards goal
+									int intToGoal = map[currentLocation.x][currentLocation.y] - 1;
+									Direction dirToGoal = directions[intToGoal];
+									if(rc.canMove(dirToGoal)){
+										rc.move(dirToGoal);
+									}else{
+										while(true){
+											Direction moveDirection = directions[rand.nextInt(8)];
+											if (rc.canMove(moveDirection)) {
+												rc.move(moveDirection);
+												break;
+											}
+										}
+									}
+								}else{
+									rc.attackSquare(goal);
 								}
 							}
 						}
