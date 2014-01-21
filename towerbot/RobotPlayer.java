@@ -25,7 +25,7 @@ public class RobotPlayer {
         while(true) {
         	
 			if (rc.getType() == RobotType.HQ) {
-				try {					
+				try {
 					//Check if a robot is spawnable and spawn one if it is
 					if (rc.isActive() && rc.senseRobotCount() < 25) {
 						if(rc.readBroadcast(0) == 0){
@@ -41,21 +41,31 @@ public class RobotPlayer {
 	                        //System.out.println("ROUND: " + Clock.getRoundNum());
 	                        //let everyone know the goal location
 	                        rc.broadcast(10001, RobotUtil.mapLocToInt(goal));
+	                        /*
 	                        for(Direction d:directions){
 	                        	System.out.println(d + " "+ d.ordinal());
 	                        }
 	                        RobotUtil.logMap(map);
+	                        */
 						}else{
 							//if there isnt a pastr being attacked and our defense is already initialized
-							if(rc.readBroadcast(5000) == 0 && rc.readBroadcast(0) == 2){
+							if(rc.readBroadcast(0) == 2){
 								
+								boolean lost = false;
 								MapLocation[] pastrLocs = rc.sensePastrLocations(rc.getTeam().opponent());
-								if(pastrLocs.length > 0){
+								if(rc.readBroadcast(5000) == 1){
+									for(MapLocation ml : pastrLocs){
+										if(ml.equals(goal)){
+											lost = true;
+										}
+									}
+								}
+								if(pastrLocs.length > 0 && lost == false){
 									goal = pastrLocs[rand.nextInt() % pastrLocs.length];
 									map = RobotUtil.assessMapWithDirection(rc, goal, new int[mapWidth][mapHeight]);
 			                        //broadcast the map out for other robots to read
 			                        RobotUtil.broadcastMap(rc, map);
-			                        RobotUtil.logMap(map);
+			                        //RobotUtil.logMap(map);
 			                        rc.broadcast(0, 2);
 									rc.broadcast(10001, RobotUtil.mapLocToInt(goal));
 									rc.broadcast(5000, 1);
@@ -88,7 +98,6 @@ public class RobotPlayer {
 								if(rc.readBroadcast(0) == 1){
 									robotMission = missions.defense;
 								}else{
-									System.out.println("OFFENSE ");
 									robotMission = missions.offense;
 								}
 								map = RobotUtil.readMapFromBroadcast(rc);
@@ -134,7 +143,11 @@ public class RobotPlayer {
 									}
 								}
 							}else{
-								System.out.println(goal);
+								if(RobotUtil.mapLocToInt(goal) != rc.readBroadcast(10001)){
+									map = RobotUtil.readMapFromBroadcast(rc);
+									goal = RobotUtil.intToMapLoc(rc.readBroadcast(10001));
+									rc.broadcast(0,2);
+								}
 								if(!rc.canAttackSquare(goal)){//if far away move towards goal
 									int intToGoal = map[currentLocation.x][currentLocation.y] - 1;
 									Direction dirToGoal = directions[intToGoal];
