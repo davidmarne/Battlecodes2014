@@ -17,7 +17,7 @@ public class aStarNode {
         this.curr = curr;
 
 
-        this.h = curr.distanceSquaredTo(goal);
+        this.h = Math.sqrt(curr.distanceSquaredTo(goal));
         if(parent != null){
             this.g = parent.g + 1;
             this.f = this.g + this.h ;

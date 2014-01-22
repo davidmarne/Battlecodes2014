@@ -2,6 +2,7 @@ package towerbot;
 
 import battlecode.common.*;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 public class RobotPlayer {
@@ -26,6 +27,13 @@ public class RobotPlayer {
         	
 			if (rc.getType() == RobotType.HQ) {
 				try {
+					Robot[] enemiesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam().opponent());
+					for(Robot r: enemiesNear){
+						if(rc.isActive() && rc.canAttackSquare(rc.senseLocationOf(r)) && rc.senseRobotInfo(r).type != RobotType.HQ){
+							rc.attackSquare(rc.senseLocationOf(r));
+							break;
+						}
+					}
 					//Check if a robot is spawnable and spawn one if it is
 					if (rc.isActive() && rc.senseRobotCount() < 25) {
                         // on first pass, assess map
@@ -48,24 +56,17 @@ public class RobotPlayer {
 							//if there isnt a pastr being attacked and our defense is already initialized
 							if(rc.readBroadcast(0) == 2){
 								
-								boolean lost = false;
 								MapLocation[] pastrLocs = rc.sensePastrLocations(rc.getTeam().opponent());
-								if(rc.readBroadcast(5000) == 1){
-									for(MapLocation ml : pastrLocs){
-										if(ml.equals(goal)){
-											lost = true;
-										}
-									}
-								}
-								if(pastrLocs.length > 0 && lost == false){
+							
+								if(pastrLocs.length > 0 && rc.readBroadcast(10004) == 0){
 									goal = pastrLocs[rand.nextInt() % pastrLocs.length];
+									//rc.broadcast(10003, 1);
 									map = RobotUtil.assessMapWithDirection(rc, goal, new int[mapWidth][mapHeight]);
 			                        //broadcast the map out for other robots to read
 			                        RobotUtil.broadcastMap(rc, map);
-			                        //RobotUtil.logMap(map);
 			                        rc.broadcast(0, 2);
 									rc.broadcast(10001, RobotUtil.mapLocToInt(goal));
-									rc.broadcast(5000, 1);
+									rc.broadcast(10004, 1);
 								}
 							}
 							
@@ -80,6 +81,15 @@ public class RobotPlayer {
 			} else if (rc.getType() == RobotType.SOLDIER) {
 				try {
 					if (rc.isActive()) {
+						
+						Robot[] enemiesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam().opponent());
+						for(Robot r: enemiesNear){
+							if(rc.canAttackSquare(rc.senseLocationOf(r)) && rc.senseRobotInfo(r).type != RobotType.HQ){
+								rc.attackSquare(rc.senseLocationOf(r));
+								break;
+							}
+						}
+						
 						if(first){
 							if(rc.readBroadcast(0) == 1 || rc.readBroadcast(0) == 2){
 								
@@ -93,7 +103,7 @@ public class RobotPlayer {
 								first = false;
 								if(robotMission == missions.defense){
 									int numDefenders = rc.readBroadcast(10002);
-									if(numDefenders < 12){
+									if(numDefenders < 8){
 										rc.broadcast(10002, numDefenders + 1);
 									}else{
 										rc.broadcast(0, 2);
@@ -122,20 +132,43 @@ public class RobotPlayer {
 									int intToGoal = map[currentLocation.x][currentLocation.y] - 1;
 									Direction dirToGoal = directions[intToGoal];
 									RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
+
 								}
 							}else{
+								//if there is a new goal pastr update path map
 								if(RobotUtil.mapLocToInt(goal) != rc.readBroadcast(10001)){
 									map = RobotUtil.readMapFromBroadcast(rc);
 									goal = RobotUtil.intToMapLoc(rc.readBroadcast(10001));
 									rc.broadcast(0,2);
 								}
+								//if the goal pastr is gone tell the hq
+								if(rc.canSenseSquare(goal)){
+									if(rc.senseObjectAtLocation(goal) == null){
+										rc.broadcast(10004, 0);
+										while(true){
+											if(enemiesNear.length > 0){
+												Direction moveDirection = currentLocation.directionTo(rc.senseLocationOf(enemiesNear[rand.nextInt() % enemiesNear.length]));
+												if (rc.canMove(moveDirection)) {
+													rc.move(moveDirection);
+													break;
+												}
+											}else{
+												Direction moveDirection = directions[rand.nextInt() % 8];
+												if (rc.canMove(moveDirection)) {
+													rc.move(moveDirection);
+													break;
+												}
+											}
+										}
+									}
+								}
+								
 								if(!rc.canAttackSquare(goal)){//if far away move towards goal
 									int intToGoal = map[currentLocation.x][currentLocation.y] - 1;
 									Direction dirToGoal = directions[intToGoal];
-                                    if(rc.canMove(dirToGoal)){
-                                        rc.move(dirToGoal);
-                                    }
+                                    RobotUtil.moveInDirection(rc, dirToGoal, "move");
 								}else{
+									System.out.println("GOAL IS HIT");
 									rc.attackSquare(goal);
 								}
 							}
@@ -159,10 +192,10 @@ public class RobotPlayer {
                                     MapLocation squareToAttack = currentLocation.add((int)xVal, (int)yVal);
                                     if(rc.canAttackSquare(squareToAttack)) {
                                         rc.attackSquare(squareToAttack);
+                                        rc.yield();
+                                        rc.yield();
                                     }
                                 }
-                                rc.yield();
-                                rc.yield();
                             }
                         }
                     }

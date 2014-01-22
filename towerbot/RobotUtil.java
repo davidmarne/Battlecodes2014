@@ -263,6 +263,26 @@ public class RobotUtil {
     	return new MapLocation(growthXLoc,growthYLoc);
     }
     
+    public static MapLocation sensePASTRGoal2(RobotController rc){
+    	double[][] growthMap = rc.senseCowGrowth();
+    	double counter = 0.0;
+    	double counterx = 0.0;
+    	double countery = 0.0;
+    	
+    	for(int i = 0; i < growthMap.length; i++){
+    		for(int j = 0; j < growthMap[0].length - i; j++){
+    			double growth = growthMap[i][j];
+    			if(growth > 0){
+    				counter+=growth;
+    				counterx += (i*growth);
+    				countery += (j*growth);
+    			}
+    		}
+    	}
+    	
+    	return new MapLocation((int)(counterx/counter), (int)(countery/counter));
+    }
+    
     public static void broadcastMap(RobotController rc, int[][] map) throws GameActionException{
     	int mapWidth = map.length;
     	int mapHeight = map[0].length;
