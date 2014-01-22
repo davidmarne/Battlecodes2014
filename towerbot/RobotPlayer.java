@@ -185,12 +185,13 @@ public class RobotPlayer {
                         for (int j = 0; j < 1080; j += 45) {
                             for(int i = maxAttack; i > 2; i-=2){
                                 if(rc.isActive()){
-                                	double len = i ;
-                                    double xVal = Math.cos(j * Math.PI / 180.0) * len;
-                                    double yVal = Math.sin(j * Math.PI / 180.0) * len;
+                                    double xVal = Math.cos(j * Math.PI / 180.0) * i;
+                                    double yVal = Math.sin(j * Math.PI / 180.0) * i;
 
                                     MapLocation squareToAttack = currentLocation.add((int)xVal, (int)yVal);
-                                    if(rc.canAttackSquare(squareToAttack)) {
+                                    if(rc.canAttackSquare(squareToAttack) &&
+                                            squareToAttack.x < rc.getMapWidth() + 3 && squareToAttack.x > -3 &&
+                                            squareToAttack.y < rc.getMapHeight() + 3 && squareToAttack.y > -3) {
                                         rc.attackSquare(squareToAttack);
                                         rc.yield();
                                         rc.yield();
