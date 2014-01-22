@@ -32,7 +32,7 @@ public class RobotPlayer {
 						if(rc.readBroadcast(0) == 0){
 							currentLocation = rc.getLocation();
 							//sense a goal location based on pastr growth
-							goal = RobotUtil.sensePASTRGoal(rc);
+							goal = RobotUtil.sensePASTRGoal2(rc);
 							//Pathing Algorithm
 	                        map = RobotUtil.assessMapWithDirection(rc, goal, map);
 	                        //broadcast the map out for other robots to read
@@ -199,9 +199,11 @@ public class RobotPlayer {
                                     MapLocation squareToAttack = currentLocation.add((int)xVal, (int)yVal);
                                     if(rc.canAttackSquare(squareToAttack)) {
                                         rc.attackSquare(squareToAttack);
+                                        rc.yield();
+                                        rc.yield();
                                     }
                                 }
-                                rc.yield();
+                                //rc.yield();
                             }
                         }
                     }
