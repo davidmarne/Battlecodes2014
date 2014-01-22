@@ -32,7 +32,7 @@ public class RobotPlayer {
 						if(rc.readBroadcast(0) == 0){
 							currentLocation = rc.getLocation();
 							//sense a goal location based on pastr growth
-							goal = RobotUtil.sensePASTRGoal2(rc);
+							goal = RobotUtil.sensePASTRGoal(rc);
 							//Pathing Algorithm
 	                        map = RobotUtil.assessMapWithDirection(rc, goal, map);
 	                        //broadcast the map out for other robots to read
@@ -108,7 +108,7 @@ public class RobotPlayer {
 								first = false;
 								if(robotMission == missions.defense){
 									int numDefenders = rc.readBroadcast(10002);
-									if(numDefenders < 12){
+									if(numDefenders < 8){
 										rc.broadcast(10002, numDefenders + 1);
 									}else{
 										rc.broadcast(0, 2);
@@ -156,8 +156,22 @@ public class RobotPlayer {
 								if(rc.canSenseSquare(goal)){
 									if(rc.senseObjectAtLocation(goal) == null){
 										rc.broadcast(10004, 0);
+										while(true){
+											if(enemiesNear.length > 0){
+												Direction moveDirection = currentLocation.directionTo(rc.senseLocationOf(enemiesNear[rand.nextInt() % enemiesNear.length]));
+												if (rc.canMove(moveDirection)) {
+													rc.move(moveDirection);
+													break;
+												}
+											}else{
+												Direction moveDirection = directions[rand.nextInt() % 8];
+												if (rc.canMove(moveDirection)) {
+													rc.move(moveDirection);
+													break;
+												}
+											}
+										}
 									}
-									rc.yield();
 								}
 								
 								if(!rc.canAttackSquare(goal)){//if far away move towards goal
@@ -167,7 +181,7 @@ public class RobotPlayer {
 										rc.move(dirToGoal);
 									}else{
 										while(true){
-											Direction moveDirection = directions[rand.nextInt(8)];
+											Direction moveDirection = directions[rand.nextInt()%8];
 											if (rc.canMove(moveDirection)) {
 												rc.move(moveDirection);
 												break;
@@ -203,7 +217,6 @@ public class RobotPlayer {
                                         rc.yield();
                                     }
                                 }
-                                //rc.yield();
                             }
                         }
                     }
