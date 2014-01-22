@@ -27,6 +27,13 @@ public class RobotPlayer {
         	
 			if (rc.getType() == RobotType.HQ) {
 				try {
+					Robot[] enemiesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam().opponent());
+					for(Robot r: enemiesNear){
+						if(rc.isActive() && rc.canAttackSquare(rc.senseLocationOf(r)) && rc.senseRobotInfo(r).type != RobotType.HQ){
+							rc.attackSquare(rc.senseLocationOf(r));
+							break;
+						}
+					}
 					//Check if a robot is spawnable and spawn one if it is
 					if (rc.isActive() && rc.senseRobotCount() < 25) {
 						if(rc.readBroadcast(0) == 0){
