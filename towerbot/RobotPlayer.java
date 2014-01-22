@@ -28,25 +28,22 @@ public class RobotPlayer {
 				try {
 					//Check if a robot is spawnable and spawn one if it is
 					if (rc.isActive() && rc.senseRobotCount() < 25) {
+                        // on first pass, assess map
 						if(rc.readBroadcast(0) == 0){
-							currentLocation = rc.getLocation();
-							//sense a goal location based on pastr growth
+							// sense a goal location based on pastr growth
 							goal = RobotUtil.sensePASTRGoal(rc);
-							//Pathing Algorithm
+
+							// Pathing Algorithm
 	                        map = RobotUtil.assessMapWithDirection(rc, goal, map);
-	                        //broadcast the map out for other robots to read
+
+	                        // broadcast the map out for other robots to read
 	                        RobotUtil.broadcastMap(rc, map);
-	                        //let everyone know that the map has finished being broadcasted
+
+	                        // let everyone know that the map has finished being broadcasted
 	                        rc.broadcast(0, 1);
-	                        //System.out.println("ROUND: " + Clock.getRoundNum());
+
 	                        //let everyone know the goal location
 	                        rc.broadcast(10001, RobotUtil.mapLocToInt(goal));
-	                        /*
-	                        for(Direction d:directions){
-	                        	System.out.println(d + " "+ d.ordinal());
-	                        }
-	                        RobotUtil.logMap(map);
-	                        */
 						}else{
 							//if there isnt a pastr being attacked and our defense is already initialized
 							if(rc.readBroadcast(0) == 2){
@@ -73,17 +70,8 @@ public class RobotPlayer {
 							}
 							
 							Direction toGoal = rc.getLocation().directionTo(goal);
-							if (rc.senseObjectAtLocation(rc.getLocation().add(toGoal)) == null && rc.senseTerrainTile(currentLocation.add(toGoal)).ordinal() != 2) {
-								rc.spawn(toGoal);
-							}else{
-								while(true){
-									Direction dir = directions[rand.nextInt() % 8];
-									if(rc.senseObjectAtLocation(currentLocation.add(dir)) == null){
-										rc.spawn(dir);
-										break;
-									}
-								}
-							}
+							// spawn
+                            RobotUtil.intelligentSpawn(rc, toGoal);
 						}
 					}
 				} catch (Exception e) {
@@ -130,17 +118,10 @@ public class RobotPlayer {
 											rc.move(dirToGoal);
 										}
 									}
-								}else if(currentLocation.distanceSquaredTo(goal) > 9){//if far away move towards goal
+								} else { //if far away move towards goal
 									int intToGoal = map[currentLocation.x][currentLocation.y] - 1;
 									Direction dirToGoal = directions[intToGoal];
-									if(rc.canMove(dirToGoal)){
-										rc.sneak(dirToGoal);
-									}
-								}else{//else move randomly
-									Direction moveDirection = directions[rand.nextInt(8)];
-									if (rc.canMove(moveDirection)) {
-										rc.move(moveDirection);
-									}
+									RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
 								}
 							}else{
 								if(RobotUtil.mapLocToInt(goal) != rc.readBroadcast(10001)){
@@ -151,17 +132,9 @@ public class RobotPlayer {
 								if(!rc.canAttackSquare(goal)){//if far away move towards goal
 									int intToGoal = map[currentLocation.x][currentLocation.y] - 1;
 									Direction dirToGoal = directions[intToGoal];
-									if(rc.canMove(dirToGoal)){
-										rc.move(dirToGoal);
-									}else{
-										while(true){
-											Direction moveDirection = directions[rand.nextInt(8)];
-											if (rc.canMove(moveDirection)) {
-												rc.move(moveDirection);
-												break;
-											}
-										}
-									}
+                                    if(rc.canMove(dirToGoal)){
+                                        rc.move(dirToGoal);
+                                    }
 								}else{
 									rc.attackSquare(goal);
 								}
@@ -176,8 +149,8 @@ public class RobotPlayer {
                     if(rc.isActive()){
                         currentLocation = rc.getLocation();
                         int maxAttack = (int)Math.sqrt(rc.getType().attackRadiusMaxSquared);
-                        for(int i = maxAttack; i > 4; i-=2){
-                            for (int j = 0; j < 360; j +=30) {
+                        for (int j = 0; j < 1080; j += 45) {
+                            for(int i = maxAttack; i > 2; i-=2){
                                 if(rc.isActive()){
                                 	double len = i ;
                                     double xVal = Math.cos(j * Math.PI / 180.0) * len;

@@ -3,6 +3,7 @@ package towerbot;
 
 import battlecode.common.*;
 
+import java.lang.reflect.GenericArrayType;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 
@@ -10,6 +11,7 @@ import java.util.ArrayList;
  * Created by dominicfrost on 1/12/14.
  */
 public class RobotUtil {
+    static Direction allDirections[] = Direction.values();
 
     public static void logMap(int[][] map) {
         int mapWidth = map.length;
@@ -31,6 +33,35 @@ public class RobotUtil {
         return new MapLocation(i/100,i%100);
     }
 
+    public static void intelligentSpawn(RobotController rc, Direction goalDirection) throws GameActionException{
+        int[] directionPriority = {0, 1, -1, 2, -2, 3, -3, 4};
+        if(rc.isActive() && rc.senseRobotCount() < GameConstants.MAX_ROBOTS){
+            for(int direction:directionPriority){
+                int trialDir = (goalDirection.ordinal() + direction + 8) % 8;
+                if(rc.canMove(allDirections[trialDir])){
+                    rc.spawn(allDirections[trialDir]);
+                    break;
+                }
+            }
+        }
+    }
+
+    public static void moveInDirection(RobotController rc, Direction goalDirection, String type) throws GameActionException {
+        int[] directionPriority = {0, 1, -1, 2, -2, 3, -3, 4};
+        if(rc.isActive()){
+            for(int direction:directionPriority){
+                int trialDir = (goalDirection.ordinal() + direction + 8) % 8;
+                if(rc.canMove(allDirections[trialDir])){
+                    if(type.equals("sneak")) {
+                        rc.sneak(allDirections[trialDir]);
+                    } else {
+                        rc.move(allDirections[trialDir]);
+                    }
+                    break;
+                }
+            }
+        }
+    }
     public static int[][] assessMap(RobotController rc, int[][] map) {
         int mapWidth = rc.getMapWidth();
         int ogMapWidth = mapWidth;
@@ -55,7 +86,7 @@ public class RobotUtil {
         return map;
     }
 
-    public static int[][] assessMapWithDirection(RobotController rc, MapLocation goal, int[][] map) {
+    public static int[][] assessMapWithDirection(RobotController rc, MapLocation goal, int[][] map) throws GameActionException {
         ArrayDeque<MapLocation> queue = new ArrayDeque<MapLocation>();
         int mapWidth = map.length;
         int mapHeight = map[0].length;
@@ -72,6 +103,7 @@ public class RobotUtil {
         queue.add(goal);
         // and the distance values / direction in the graph __|_
         while(!queue.isEmpty()) {
+            intelligentSpawn(rc, rc.getLocation().directionTo(goal));
             currentLocation = queue.poll();
             currentX = currentLocation.x;
             currentY = currentLocation.y;
@@ -123,19 +155,6 @@ public class RobotUtil {
         }
         return map;
     }
-    
-    public static int createMeta(int val, int dir) {
-        return (val * 100) + dir;
-    }
-
-    public static int decodeVal(int meta) {
-        return meta / 100;
-    }
-
-    public static int decodeDir(int meta) {
-        return meta % 10;
-    }
-
 
     public static ArrayList<Direction> bugPath(MapLocation start, MapLocation destination, int[][] map) throws GameActionException {
         
