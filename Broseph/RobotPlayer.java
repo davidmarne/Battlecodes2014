@@ -53,7 +53,12 @@ public class RobotPlayer {
 						if(rc.readBroadcast(DefenseGoalLocation) == 0){
 							currentLocation = rc.getLocation();
 							//sense a goal location based on pastr growth
-							goal = RobotUtil.sensePASTRGoal2(rc);
+							while(true){
+								goal = RobotUtil.sensePASTRGoal3(rc, mapWidth, mapHeight);
+								if(!goal.equals(new MapLocation(-1,-1))){
+									break;
+								}
+							}
 							//Pathing Algorithm
 	                        map = RobotUtil.assessMapWithDirection(rc, goal, map);
 	                        RobotUtil.logMap(map);

@@ -7,6 +7,7 @@ import java.lang.reflect.GenericArrayType;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 /**
  * Created by dominicfrost on 1/12/14.
  */
@@ -282,6 +283,42 @@ public class RobotUtil {
     	if((int)(counterx/counter) == 0 && (int)(countery/counter) == 0 ){
     		return new MapLocation(1,1);
     	}else return new MapLocation((int)(counterx/counter), (int)(countery/counter));
+    }
+    
+    public static MapLocation sensePASTRGoal3(RobotController rc, int mapWidth, int mapHeight){
+    	Random rand = new Random();
+    	int avg = (mapWidth+mapHeight) / 2;
+    	double[][] map = rc.senseCowGrowth();
+    	mapWidth--;
+    	mapHeight--;
+    	double max = 0;
+    	MapLocation maxLoc = new MapLocation(-1,-1);
+    	
+    	for(int i = 0; i <  avg; i++){
+    		int currentWidth = rand.nextInt() % mapWidth;
+    		int currentHeight = rand.nextInt() % mapHeight;
+    		MapLocation potentialGoal = new MapLocation(currentWidth, currentHeight);
+    		
+    		if(rc.senseTerrainTile(potentialGoal).ordinal() != 2 && rc.senseTerrainTile(potentialGoal).ordinal() != 3 && potentialGoal.distanceSquaredTo(rc.senseEnemyHQLocation()) > 100){
+    			double total = 0;
+	    		
+	    		for(int j = -2; j <= 3; j++){
+	    			for(int k = -2; k <= 3; k++){
+	    				int x = currentWidth+j;
+	    				int y = currentHeight+k;
+	    				if(x >= 0 && y >=0 && x < mapWidth && y < mapHeight){
+	    					total += map[x][y];
+	    				}
+	    			}
+	    		}
+	    		if(total > max){
+	    			max = total;
+	    			maxLoc = potentialGoal;
+	    		}
+    		}
+    	}
+    	
+    	return maxLoc;
     }
     
     public static void broadcastMap(RobotController rc, int[][] map, int offset) throws GameActionException{
