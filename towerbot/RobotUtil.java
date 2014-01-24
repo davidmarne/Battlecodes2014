@@ -305,4 +305,28 @@ public class RobotUtil {
     	}
     	return map;
     }
+    public static MapLocation getPastrToMakeGoal(RobotController rc, int[] channels) throws GameActionException{
+    	MapLocation[] pastrLocs = rc.sensePastrLocations(rc.getTeam().opponent());
+    	for(MapLocation pastr: pastrLocs){
+    		boolean flag = true;
+    		for(int channel: channels){
+    			if(rc.readBroadcast(channel) == mapLocToInt(pastr)){
+    				flag = false;
+    			}
+    		}
+    		if(flag == true){
+    			return pastr;
+    		}
+    	}
+    	return null;
+    }
+    
+    public static int getNewGoalPastr(RobotController rc, int lastOffset, int[] channels) throws GameActionException{
+    	for(int channel : channels){
+    		if(channel != lastOffset && rc.readBroadcast(channel) != 0){
+    			return channel;
+    		}
+    	}
+    	return -1;
+    }
 }

@@ -147,7 +147,7 @@ public class RobotPlayer {
                             	//get a random corner and delete it from cornersAvailableToMake, find a path
                                 corner = cornersAvailableToMake.remove((rc.getRobot().getID() * rand.nextInt(cornersAvailableToMake.size())) % cornersAvailableToMake.size());
                                 path = RobotUtil.bugPath(rc.getLocation(), corner, map);
-                                System.out.println(rc.getRobot().getID() + " is being sent to "+corner + " to make a PASTR");
+                                //System.out.println(rc.getRobot().getID() + " is being sent to "+corner + " to make a PASTR");
                                 //number of bots already sent to make a corner is incremented 
                                 //and the corner is broadcasted so others know its already gonna be made a pastr
                                 numAlreadySentToMake++;
@@ -158,7 +158,7 @@ public class RobotPlayer {
                             }else if(cornersAvailableToGuard.size() > 0 && !hasOrders){//make a guard bot
                                 guardLocation = cornersAvailableToGuard.remove(0);
                                 path = RobotUtil.bugPath(rc.getLocation(), guardLocation, map);
-                                System.out.println(rc.getRobot().getID() + " is being sent to "+ guardLocation + " to guard a PASTR");
+                                //System.out.println(rc.getRobot().getID() + " is being sent to "+ guardLocation + " to guard a PASTR");
                                 //number of bots already sent to guard a corner is incremented 
                                 //and the corner is broadcasted so others know its already gonna be guarded
                                 numAlreadySentToGuard++;
