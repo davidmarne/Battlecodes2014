@@ -22,6 +22,7 @@ public class RobotPlayer {
 	static int numDefendingGoal = 10;
 	static int startGroup = 11;
 	static int startGroupGO = 12;
+	static int sendToAttack = 13;
 	
 	public static void run(RobotController rc) {
 		rand = new Random();
@@ -55,7 +56,7 @@ public class RobotPlayer {
 							RobotUtil.intelligentSpawn(rc, rc.getLocation().directionTo(rc.senseEnemyHQLocation()));
 						}
 						//if there are 5 new spawnees at the hq send em out
-						if(rc.readBroadcast(startGroup) > 5){
+						if(rc.readBroadcast(startGroup) > 3){
 							rc.broadcast(startGroupGO, 1);
 						}else{
 							rc.broadcast(startGroupGO, 0);
@@ -79,11 +80,12 @@ public class RobotPlayer {
 	                        rc.broadcast(DefenseGoalLocation, RobotUtil.mapLocToInt(goal));
 						}else{
 							
-							rc.broadcast(OffenseNewLocation, 0);
+							//rc.broadcast(OffenseNewLocation, 0);
+							/*
 							if(rc.readBroadcast(OffenseGoalDestroyed) == 1){
 								System.out.println(RobotUtil.intToMapLoc(rc.readBroadcast(rc.readBroadcast(OffenseCurrentGoalOffset)))+" from "+rc.readBroadcast(OffenseCurrentGoalOffset) + " has been eliminated");
 								rc.broadcast(rc.readBroadcast(OffenseCurrentGoalOffset), 0);
-							}
+							}*/
 							
 							//if a new map can be computed do so
 							for(int channel: OffenseGoalLocations){
@@ -101,6 +103,7 @@ public class RobotPlayer {
 									}
 								}
 							}
+							/*
 							//if the goal is destroyed update the goal
 							if(rc.readBroadcast(OffenseGoalDestroyed) == 1){
 								int oldOffset = rc.readBroadcast(OffenseCurrentGoalOffset);
@@ -108,9 +111,9 @@ public class RobotPlayer {
 								if(n != -1){
 									rc.broadcast(OffenseCurrentGoalOffset, n);
 									rc.broadcast(OffenseGoalDestroyed, 0);
-									rc.broadcast(OffenseNewLocation, 1);
+									//rc.broadcast(OffenseNewLocation, 1);
 								}
-							}
+							}*/
 						}
 					}
 				} catch (Exception e) {
@@ -134,47 +137,58 @@ public class RobotPlayer {
 							}
 							//when a group of five or more has been gathered we can finally go to goal
 							if(rc.readBroadcast(startGroupGO) == 1){
-								 rc.broadcast(startGroup, rc.readBroadcast(startGroup) - 1);
+								rc.broadcast(startGroup, rc.readBroadcast(startGroup) - 1);
 								second = false;
 							}
 						}else{
 							currentLocation = rc.getLocation();
 							
 							if(robotMission == missions.defense){
+								
+								/*
 								if(wasOffense && rc.readBroadcast(OffenseNewLocation) == 1){
 									//map = RobotUtil.readMapFromBroadcast(rc, rc.readBroadcast(OffenseCurrentGoalOffset) * 10000);
 									goal = RobotUtil.intToMapLoc(rc.readBroadcast(rc.readBroadcast(OffenseCurrentGoalOffset)));
 									robotMission = missions.offense;
 									wasOffense = false;
-								}
-								//if a pastr and noisetower havent been made/assigned to a bot
-								if(rc.readBroadcast(buildingProgress) < 2){
-									if(currentLocation.equals(goal)){
-										rc.construct(RobotType.PASTR);
-										rc.broadcast(buildingProgress, 1);
-									}else if(rc.readBroadcast(buildingProgress) == 1 && currentLocation.distanceSquaredTo(goal) < 4){
-										rc.construct(RobotType.NOISETOWER);
-										rc.broadcast(buildingProgress, 2);
+								}*/
+								
+								if(rc.readBroadcast(sendToAttack) > 0){
+									goal = RobotUtil.intToMapLoc(rc.readBroadcast(OffenseCurrentGoalOffset));
+									robotMission = missions.offense;
+									rc.broadcast(sendToAttack, rc.readBroadcast(sendToAttack) - 1);
+								}else{
+								
+									//if a pastr and noisetower havent been made/assigned to a bot
+									if(rc.readBroadcast(buildingProgress) < 2){
+										if(currentLocation.equals(goal)){
+											rc.construct(RobotType.PASTR);
+											rc.broadcast(buildingProgress, 1);
+										}else if(rc.readBroadcast(buildingProgress) == 1 && currentLocation.distanceSquaredTo(goal) < 4){
+											rc.construct(RobotType.NOISETOWER);
+											rc.broadcast(buildingProgress, 2);
+										}
 									}
+									//move towards goal
+									int intToGoal = rc.readBroadcast(RobotUtil.mapLocToInt(new MapLocation(currentLocation.x,currentLocation.y)) + DefenseChannelOffset) - 1;
+									Direction dirToGoal = directions[intToGoal];
+									RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
 								}
-								//move towards goal
-								int intToGoal = rc.readBroadcast(RobotUtil.mapLocToInt(new MapLocation(currentLocation.x,currentLocation.y)) + DefenseChannelOffset) - 1;
-								Direction dirToGoal = directions[intToGoal];
-								RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
 							}else{
 								//if there is a new goal pastr update path map
+								/*
 								if(rc.readBroadcast(OffenseNewLocation) == 1){
 									//map = RobotUtil.readMapFromBroadcast(rc, rc.readBroadcast(OffenseCurrentGoalOffset) * 10000);
 									goal = RobotUtil.intToMapLoc(rc.readBroadcast(rc.readBroadcast(OffenseCurrentGoalOffset)));
-								}
+								}*/
+								
 								//if the goal pastr is gone tell the hq
 								if(rc.canSenseSquare(goal)){
-									System.out.println("SENSE IT");
 									if(rc.senseObjectAtLocation(goal) == null){
 										rc.broadcast(OffenseGoalDestroyed, 1);
 										goal = RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation));
 										//map = RobotUtil.readMapFromBroadcast(rc, DefenseChannelOffset);
-										wasOffense = true;
+										//wasOffense = true;
 										robotMission = missions.defense;
 									}
 								}
@@ -215,6 +229,34 @@ public class RobotPlayer {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+            }else if(rc.getType() == RobotType.PASTR){
+            	try{
+	            	Robot[] teammatesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam());
+	            	System.out.println(teammatesNear.length);
+	            	if(teammatesNear.length > 8){
+	            		int oldOffset = rc.readBroadcast(OffenseCurrentGoalOffset);
+						int n = RobotUtil.getNewGoalPastr(rc, oldOffset, OffenseGoalLocations);
+						if(n != -1){
+							rc.broadcast(OffenseCurrentGoalOffset, n);
+							rc.broadcast(sendToAttack, 4);
+							//gives time for e
+							rc.yield();
+							rc.yield();
+							rc.yield();
+							rc.yield();
+							rc.yield();
+							rc.yield();
+							rc.yield();
+							rc.yield();
+							rc.yield();
+							rc.yield();
+							rc.yield();
+							rc.yield();
+						}
+	            	}
+            	}catch (Exception e) {
+					//e.printStackTrace();
+				}
             }
 			
 			rc.yield();
