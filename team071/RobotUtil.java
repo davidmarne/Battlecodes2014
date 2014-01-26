@@ -400,19 +400,29 @@ public class RobotUtil {
     }
     public static MapLocation getPastrToMakeGoal(RobotController rc, int[] channels) throws GameActionException{
     	MapLocation[] pastrLocs = rc.sensePastrLocations(rc.getTeam().opponent());
-    	
+        MapLocation ourPASTR = rc.sensePastrLocations(rc.getTeam())[0];
+
+        MapLocation closestPASTR = null;
+        int smallestDistance = 9999;
+        boolean newPASTRLocation;
+        // loop through all enemy PASTRS - we need to find the one closest to our PASTR
     	for(MapLocation pastr: pastrLocs){
-    		boolean flag = true;
+    		newPASTRLocation = true;
+            // loop through all channels
     		for(int channel: channels){
+                // don't calculate a whole map if one already exists for it.
     			if(rc.readBroadcast(channel) == mapLocToInt(pastr)){
-    				flag = false;
+                    newPASTRLocation = false;
     			}
     		}
-    		if(flag == true){
-    			return  pastr;
+    		if(newPASTRLocation){
+    			if(pastr.distanceSquaredTo(ourPASTR) < smallestDistance) {
+                    closestPASTR = pastr;
+                    smallestDistance = pastr.distanceSquaredTo(ourPASTR);
+                }
     		}
     	}
-    	return null;
+    	return closestPASTR;
     }
     
     public static int getNewGoalPastr(RobotController rc, int lastOffset, int[] channels) throws GameActionException{
@@ -433,7 +443,9 @@ public class RobotUtil {
         		}
         	}
         	return result;
-    	}else return -1;
+    	} else {
+            return -1;
+        }
     }
     
     public static void movingBugPath(RobotController rc, MapLocation goal) throws GameActionException{

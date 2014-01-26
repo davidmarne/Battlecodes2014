@@ -32,7 +32,7 @@ public class RobotPlayer {
 		MapLocation goal = new MapLocation(0,0);
 		boolean first = true;
 		boolean second = true;
-		MapLocation currentLocation = null;
+		MapLocation currentLocation;
 		missions robotMission = missions.defense;
 		
 		
@@ -62,7 +62,6 @@ public class RobotPlayer {
 						}
 						
 						if(rc.readBroadcast(DefenseGoalLocation) == 0){
-							currentLocation = rc.getLocation();
 							//sense a goal location based on pastr growth
 							while(true){
 								goal = RobotUtil.sensePASTRGoal3(rc, mapWidth, mapHeight);
