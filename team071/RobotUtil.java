@@ -18,6 +18,8 @@ public class RobotUtil {
 	static int OffenseGoalDestroyed = 7;
 	static int OffenseCurrentGoalOffset = 8;
 	static int buildingProgress = 9;
+	static int numDefendingGoal = 10;
+	static int startGroup = 11;
     static Direction allDirections[] = Direction.values();
     static Random rand = new Random();
     
@@ -93,6 +95,7 @@ public class RobotUtil {
                 int trialDir = (goalDirection.ordinal() + direction + 8) % 8;
                 if(rc.canMove(allDirections[trialDir])){
                     rc.spawn(allDirections[trialDir]);
+                    rc.broadcast(startGroup, rc.readBroadcast(startGroup) + 1);
                     break;
                 }
             }

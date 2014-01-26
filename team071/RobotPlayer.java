@@ -19,6 +19,9 @@ public class RobotPlayer {
 	static int OffenseGoalDestroyed = 7;
 	static int OffenseCurrentGoalOffset = 8;
 	static int buildingProgress = 9;
+	static int numDefendingGoal = 10;
+	static int startGroup = 11;
+	static int startGroupGO = 12;
 	
 	public static void run(RobotController rc) {
 		rand = new Random();
@@ -28,6 +31,7 @@ public class RobotPlayer {
 		int[][] map = new int[mapWidth][mapHeight];
 		MapLocation goal = new MapLocation(0,0);
 		boolean first = true;
+		boolean second = true;
 		MapLocation currentLocation = null;
 		missions robotMission = missions.defense;
 		boolean wasOffense = false;
@@ -50,6 +54,13 @@ public class RobotPlayer {
 						if(rc.senseRobotCount() < 25){
 							RobotUtil.intelligentSpawn(rc, rc.getLocation().directionTo(rc.senseEnemyHQLocation()));
 						}
+						//if there are 5 new spawnees at the hq send em out
+						if(rc.readBroadcast(startGroup) > 5){
+							rc.broadcast(startGroupGO, 1);
+						}else{
+							rc.broadcast(startGroupGO, 0);
+						}
+						
 						if(rc.readBroadcast(DefenseGoalLocation) == 0){
 							currentLocation = rc.getLocation();
 							//sense a goal location based on pastr growth
@@ -113,19 +124,18 @@ public class RobotPlayer {
 							continue;
 						}
 						
-						if(first){
-							//get a map if possible
+						if(first || second){
+							//get map to our pastr if possible
 							if(rc.readBroadcast(DefenseGoalLocation) > 0){
-								if(rc.readBroadcast(OffenseCurrentGoalOffset) == 0){
-									goal = RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation));
-									//map = RobotUtil.readMapFromBroadcast(rc, DefenseChannelOffset);
-									robotMission = missions.defense;
-								}else{
-									goal = RobotUtil.intToMapLoc(rc.readBroadcast(rc.readBroadcast(OffenseCurrentGoalOffset)));
-									//map = RobotUtil.readMapFromBroadcast(rc, rc.readBroadcast(OffenseCurrentGoalOffset) * 10000);
-									robotMission = missions.offense;
-								}
+								//all bots go to our pastr to rally
+								goal = RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation));
+								robotMission = missions.defense;
 								first = false;
+							}
+							//when a group of five or more has been gathered we can finally go to goal
+							if(rc.readBroadcast(startGroupGO) == 1){
+								 rc.broadcast(startGroup, rc.readBroadcast(startGroup) - 1);
+								second = false;
 							}
 						}else{
 							currentLocation = rc.getLocation();
