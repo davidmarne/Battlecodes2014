@@ -23,6 +23,7 @@ public class RobotPlayer {
 	static int startGroup = 11;
 	static int startGroupGO = 12;
 	static int sendToAttack = 13;
+	static int towerLocation = 14;
 	
 	public static void run(RobotController rc) {
 		rand = new Random();
@@ -129,7 +130,7 @@ public class RobotPlayer {
 						
 						if(first || second){
 							//get map to our pastr if possible
-							if(rc.readBroadcast(DefenseGoalLocation) > 0){
+							if(rc.readBroadcast(DefenseGoalLocation) > 0 && first){
 								//all bots go to our pastr to rally
 								goal = RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation));
 								robotMission = missions.defense;
@@ -158,15 +159,21 @@ public class RobotPlayer {
 									robotMission = missions.offense;
 									rc.broadcast(sendToAttack, rc.readBroadcast(sendToAttack) - 1);
 								}else{
-								
-									//if a pastr and noisetower havent been made/assigned to a bot
+								    //if a pastr and noisetower havent been made/assigned to a bot
 									if(rc.readBroadcast(buildingProgress) < 2){
 										if(currentLocation.equals(goal)){
 											rc.construct(RobotType.PASTR);
 											rc.broadcast(buildingProgress, 1);
 										}else if(rc.readBroadcast(buildingProgress) == 1 && currentLocation.distanceSquaredTo(goal) < 4){
 											rc.construct(RobotType.NOISETOWER);
+											rc.broadcast(towerLocation, RobotUtil.mapLocToInt(currentLocation));
 											rc.broadcast(buildingProgress, 2);
+										}
+									}else{//if the old pastr or tower has been destroyed 
+										if(currentLocation.equals(goal)){
+											rc.construct(RobotType.PASTR);
+										}else if(currentLocation.equals(RobotUtil.intToMapLoc(rc.readBroadcast(towerLocation)))){
+											rc.construct(RobotType.NOISETOWER);
 										}
 									}
 									//move towards goal

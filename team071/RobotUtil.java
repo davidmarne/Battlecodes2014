@@ -426,7 +426,7 @@ public class RobotUtil {
     		int max = Integer.MAX_VALUE;
         	int result = -1;
         	for(int channel: populatedChannels){
-        		int current = RobotUtil.intToMapLoc(rc.readBroadcast(lastOffset)).distanceSquaredTo(RobotUtil.intToMapLoc(rc.readBroadcast(channel)));
+        		int current = RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation)).distanceSquaredTo(RobotUtil.intToMapLoc(rc.readBroadcast(channel)));
         		if(current < max){
         			max = current;
         			result = channel;
