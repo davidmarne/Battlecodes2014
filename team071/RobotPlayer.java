@@ -13,9 +13,7 @@ public class RobotPlayer {
 	
 	static int DefenseChannelOffset = 10000;
 	static int DefenseGoalLocation = 1;
-	static int[] OffenseChannelOffsets = {20000,30000,40000,50000};
 	static int[] OffenseGoalLocations = {2,3,4,5};
-	static int OffenseNewLocation = 6;
 	static int OffenseGoalDestroyed = 7;
 	static int OffenseCurrentGoalOffset = 8;
 	static int buildingProgress = 9;
@@ -80,14 +78,6 @@ public class RobotPlayer {
 	                        //let everyone know the goal location
 	                        rc.broadcast(DefenseGoalLocation, RobotUtil.mapLocToInt(goal));
 						}else{
-							
-							//rc.broadcast(OffenseNewLocation, 0);
-							/*
-							if(rc.readBroadcast(OffenseGoalDestroyed) == 1){
-								System.out.println(RobotUtil.intToMapLoc(rc.readBroadcast(rc.readBroadcast(OffenseCurrentGoalOffset)))+" from "+rc.readBroadcast(OffenseCurrentGoalOffset) + " has been eliminated");
-								rc.broadcast(rc.readBroadcast(OffenseCurrentGoalOffset), 0);
-							}*/
-							
 							//if a new map can be computed do so
 							for(int channel: OffenseGoalLocations){
 								if(rc.readBroadcast(channel) == 0){
@@ -96,25 +86,11 @@ public class RobotPlayer {
 										map = RobotUtil.assessMapWithDirection(rc, goal, new int[mapWidth][mapHeight]);
 										rc.broadcast(channel, RobotUtil.mapLocToInt(goal));
 										RobotUtil.broadcastMap(rc, map, channel*10000);
-										if(rc.readBroadcast(OffenseCurrentGoalOffset) == 0){
-											rc.broadcast(OffenseCurrentGoalOffset, channel);
-										}
 										System.out.println(goal+ " has been added to " +channel);
 										break;
 									}
 								}
 							}
-							/*
-							//if the goal is destroyed update the goal
-							if(rc.readBroadcast(OffenseGoalDestroyed) == 1){
-								int oldOffset = rc.readBroadcast(OffenseCurrentGoalOffset);
-								int n = RobotUtil.getNewGoalPastr(rc, oldOffset, OffenseGoalLocations);
-								if(n != -1){
-									rc.broadcast(OffenseCurrentGoalOffset, n);
-									rc.broadcast(OffenseGoalDestroyed, 0);
-									//rc.broadcast(OffenseNewLocation, 1);
-								}
-							}*/
 						}
 					}
 				} catch (Exception e) {
@@ -146,16 +122,9 @@ public class RobotPlayer {
 							
 							if(robotMission == missions.defense){
 								
-								/*
-								if(wasOffense && rc.readBroadcast(OffenseNewLocation) == 1){
-									//map = RobotUtil.readMapFromBroadcast(rc, rc.readBroadcast(OffenseCurrentGoalOffset) * 10000);
-									goal = RobotUtil.intToMapLoc(rc.readBroadcast(rc.readBroadcast(OffenseCurrentGoalOffset)));
-									robotMission = missions.offense;
-									wasOffense = false;
-								}*/
-								
 								if(rc.readBroadcast(sendToAttack) > 0){
-									goal = RobotUtil.intToMapLoc(rc.readBroadcast(OffenseCurrentGoalOffset));
+									goal = RobotUtil.intToMapLoc(rc.readBroadcast(rc.readBroadcast(OffenseCurrentGoalOffset)));
+									System.out.println("Retrieved " + goal);
 									robotMission = missions.offense;
 									rc.broadcast(sendToAttack, rc.readBroadcast(sendToAttack) - 1);
 								}else{
@@ -182,17 +151,11 @@ public class RobotPlayer {
 									RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
 								}
 							}else{
-								//if there is a new goal pastr update path map
-								/*
-								if(rc.readBroadcast(OffenseNewLocation) == 1){
-									//map = RobotUtil.readMapFromBroadcast(rc, rc.readBroadcast(OffenseCurrentGoalOffset) * 10000);
-									goal = RobotUtil.intToMapLoc(rc.readBroadcast(rc.readBroadcast(OffenseCurrentGoalOffset)));
-								}*/
 								
 								//if the goal pastr is gone tell the hq
 								if(rc.canSenseSquare(goal)){
 									if(rc.senseObjectAtLocation(goal) == null){
-										rc.broadcast(OffenseGoalDestroyed, 1);
+										rc.broadcast(rc.readBroadcast(OffenseCurrentGoalOffset), 0);
 										goal = RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation));
 										//map = RobotUtil.readMapFromBroadcast(rc, DefenseChannelOffset);
 										//wasOffense = true;
@@ -239,12 +202,13 @@ public class RobotPlayer {
             }else if(rc.getType() == RobotType.PASTR){
             	try{
 	            	Robot[] teammatesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam());
-	            	System.out.println(teammatesNear.length);
+	            	//System.out.println(teammatesNear.length);
 	            	if(teammatesNear.length > 8){
 	            		int oldOffset = rc.readBroadcast(OffenseCurrentGoalOffset);
 						int n = RobotUtil.getNewGoalPastr(rc, oldOffset, OffenseGoalLocations);
 						if(n != -1){
 							rc.broadcast(OffenseCurrentGoalOffset, n);
+							System.out.println("GOTO " + RobotUtil.intToMapLoc(rc.readBroadcast(n)));
 							rc.broadcast(sendToAttack, 4);
 							//gives time for e
 							rc.yield();
