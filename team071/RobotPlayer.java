@@ -34,7 +34,7 @@ public class RobotPlayer {
 		boolean second = true;
 		MapLocation currentLocation = null;
 		missions robotMission = missions.defense;
-		boolean wasOffense = false;
+		
 		
 		
         while(true) {
@@ -152,7 +152,7 @@ public class RobotPlayer {
 								}
 							}else{
 								
-								//if the goal pastr is gone tell the hq
+								//if the goal pastr is gone tell the hq and go back to our pastr
 								if(rc.canSenseSquare(goal)){
 									if(rc.senseObjectAtLocation(goal) == null){
 										rc.broadcast(rc.readBroadcast(OffenseCurrentGoalOffset), 0);

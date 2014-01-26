@@ -357,8 +357,8 @@ public class RobotUtil {
     		if(rc.senseTerrainTile(potentialGoal).ordinal() != 2 && rc.senseTerrainTile(potentialGoal).ordinal() != 3 && potentialGoal.distanceSquaredTo(rc.senseEnemyHQLocation()) > 100){
     			double total = 0;
 	    		
-	    		for(int j = -2; j <= 3; j++){
-	    			for(int k = -2; k <= 3; k++){
+	    		for(int j = -3; j <= 3; j++){
+	    			for(int k = -3; k <= 3; k++){
 	    				int x = currentWidth+j;
 	    				int y = currentHeight+k;
 	    				if(x >= 0 && y >=0 && x < mapWidth && y < mapHeight){
