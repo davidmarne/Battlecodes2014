@@ -27,6 +27,8 @@ public class RobotPlayer {
 	static int[] numberInjuredInGroup = {22,23,24,25,26}; 
 	static int groupUpdate = 20;
 	static int groupLeaderPicked = 21;
+	static int reinforcementsNeeded = 27;
+	static int reinforcementsSent = 28;
 	//every robotID + 50 is the robots healing boolean
 	
 	public static void run(RobotController rc) {
@@ -139,8 +141,13 @@ public class RobotPlayer {
 							currentLocation = rc.getLocation();
 							
 							if(robotMission == missions.defense){
-								
-								if(rc.readBroadcast(sendToAttack) > 0){
+								if(rc.readBroadcast(reinforcementsSent) > 0){
+									goal = RobotUtil.intToMapLoc(rc.readBroadcast(rc.readBroadcast(OffenseCurrentGoalOffset)));
+									System.out.println("Retrieved " + goal);
+									robotMission = missions.offense;
+									rc.broadcast(reinforcementsSent, rc.readBroadcast(reinforcementsSent) - 1);
+									
+								}else if(rc.readBroadcast(sendToAttack) > 0){
 									goal = RobotUtil.intToMapLoc(rc.readBroadcast(rc.readBroadcast(OffenseCurrentGoalOffset)));
 									System.out.println("Retrieved " + goal);
 									robotMission = missions.offense;
@@ -174,6 +181,12 @@ public class RobotPlayer {
 									RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
 								}
 							}else{
+								//if many are injured in group ask for reinforcements
+								if(leaderOfGroup){
+									if(rc.readBroadcast(numberInjuredInGroup[groupNum]) > 4){
+										rc.broadcast(reinforcementsNeeded, groupNum);
+									}
+								}
 								//if the goal pastr is gone tell the hq and go back to our pastr
 								if(rc.canSenseSquare(goal)){
 									if(rc.senseObjectAtLocation(goal) == null){
@@ -225,14 +238,19 @@ public class RobotPlayer {
             	try{
 	            	Robot[] teammatesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam());
 	            	//System.out.println(teammatesNear.length);
-	            	if(teammatesNear.length > 8){
+	            	if(rc.readBroadcast(reinforcementsNeeded) > 0){
+	            		if(teammatesNear.length > 9){
+	            			rc.broadcast(reinforcementsSent, 3);
+	            			rc.broadcast(OffenseCurrentGoalOffset, rc.readBroadcast(reinforcementsNeeded));
+	            		}
+	            	}else if(teammatesNear.length > 10){
 	            		int oldOffset = rc.readBroadcast(OffenseCurrentGoalOffset);
 						int n = RobotUtil.getNewGoalPastr(rc, oldOffset, OffenseGoalLocations);
 						if(n != -1){
 							rc.broadcast(groupUpdate, Arrays.binarySearch(OffenseGoalLocations, n) + 1);
 							rc.broadcast(OffenseCurrentGoalOffset, n);
 							System.out.println("GOTO " + RobotUtil.intToMapLoc(rc.readBroadcast(n)));
-							rc.broadcast(sendToAttack, 4);
+							rc.broadcast(sendToAttack, 6);
 							rc.broadcast(groupLeaderPicked, 1);
 							//gives time for e
 							rc.yield();
