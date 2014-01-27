@@ -24,8 +24,10 @@ public class RobotPlayer {
 	static int sendToAttack = 13;
 	static int towerLocation = 14;
 	static int[] groupAttackLocation = {15,16,17,18,19};
-	static int groupUpdate;
-	
+	static int[] numberInjuredInGroup = {22,23,24,25,26}; 
+	static int groupUpdate = 20;
+	static int groupLeaderPicked = 21;
+	//every robotID + 50 is the robots healing boolean
 	
 	public static void run(RobotController rc) {
 		rand = new Random();
@@ -40,6 +42,7 @@ public class RobotPlayer {
 		MapLocation currentLocation;
 		missions robotMission = missions.defense;
 		int groupNum = 0;
+		boolean leaderOfGroup = false;
 
         while(true) {
         	
@@ -114,6 +117,7 @@ public class RobotPlayer {
 					if (rc.isActive()) {
 						
 						if(RobotUtil.micro(rc, groupNum) == true){
+							rc.yield();
 							continue;
 						}
 						
@@ -141,6 +145,10 @@ public class RobotPlayer {
 									robotMission = missions.offense;
 									rc.broadcast(sendToAttack, rc.readBroadcast(sendToAttack) - 1);
 									groupNum = rc.readBroadcast(groupUpdate);
+									if(rc.readBroadcast(groupLeaderPicked) == 1){
+										leaderOfGroup = true;
+										rc.broadcast(groupLeaderPicked, 0);
+									}
 								}else{
 								    //if a pastr and noisetower havent been made/assigned to a bot
 									if(rc.readBroadcast(buildingProgress) < 2){
@@ -165,7 +173,6 @@ public class RobotPlayer {
 									RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
 								}
 							}else{
-								
 								//if the goal pastr is gone tell the hq and go back to our pastr
 								if(rc.canSenseSquare(goal)){
 									if(rc.senseObjectAtLocation(goal) == null){
@@ -225,6 +232,7 @@ public class RobotPlayer {
 							rc.broadcast(OffenseCurrentGoalOffset, n);
 							System.out.println("GOTO " + RobotUtil.intToMapLoc(rc.readBroadcast(n)));
 							rc.broadcast(sendToAttack, 4);
+							rc.broadcast(groupLeaderPicked, 1);
 							//gives time for e
 							rc.yield();
 							rc.yield();

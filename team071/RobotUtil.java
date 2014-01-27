@@ -22,7 +22,9 @@ public class RobotUtil {
 	static int sendToAttack = 13;
 	static int towerLocation = 14;
 	static int[] groupAttackLocation = {15,16,17,18,19};
-	static int groupUpdate;
+	static int[] numberInjuredInGroup = {22,23,24,25,26}; 
+	static int groupUpdate = 20;
+	static int groupLeaderPicked = 21;
     static Direction allDirections[] = Direction.values();
     static Random rand = new Random();
     
@@ -39,57 +41,83 @@ public class RobotUtil {
 				teammatesNear.add(robotsNearArr[i]);
 			}
 		}
-		if(rc.getHealth() > 40){
-			if(rc.readBroadcast(groupAttackLocation[groupNum]) != -1){
-				MapLocation groupAttackSpot = intToMapLoc(rc.readBroadcast(groupAttackLocation[groupNum]));
-				//if you can sense the spot, and theres still a robot attack, else tell everyone its gone and try and attack any other bots around
-				if(rc.canSenseSquare(groupAttackSpot)){
-					GameObject objAtLoc = rc.senseObjectAtLocation(groupAttackSpot);
-					if(objAtLoc != null && objAtLoc.getTeam() != rc.getTeam()){
-						if(rc.canAttackSquare(groupAttackSpot)){
-							rc.attackSquare(groupAttackSpot);
-							result = true;
-						}else{
-							moveInDirection(rc, rc.getLocation().directionTo(groupAttackSpot), "sneak");
-							result = true;
-						}
-					}else{
-						System.out.println("Group " + groupNum + " destroyed robot at " + groupAttackSpot);
-						rc.broadcast(groupAttackLocation[groupNum], -1);
+		
+		//if the the robot is injured flee
+		if(rc.readBroadcast(rc.getRobot().getID() + 50) == 1){
+			if(rc.getHealth() > 70){
+				rc.broadcast(rc.getRobot().getID() + 50, 0);
+				rc.broadcast(numberInjuredInGroup[groupNum], rc.readBroadcast(numberInjuredInGroup[groupNum]) - 1);
+			}else{
+				if(enemiesNear.size() > 0){//run like a little girl
+					int counterx = 0;
+					int countery = 0;
+					for(Robot opp: enemiesNear){
+						MapLocation oppLoc = rc.senseLocationOf(opp);
+						counterx += oppLoc.x;
+						countery += oppLoc.y;
 					}
-				}else{
-					moveInDirection(rc, rc.getLocation().directionTo(groupAttackSpot), "sneak");
+					MapLocation avg = new MapLocation(counterx / enemiesNear.size(), countery / enemiesNear.size());
+		
+					Direction dirToGoal = rc.getLocation().directionTo(avg).opposite();
+					RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
 					result = true;
 				}
-			}else if(enemiesNear.size() > 0){
-				//if someone has posted a group attack loc
-				for(int i = 0; i < enemiesNear.size(); i++){
-					Robot r = enemiesNear.get(i);
-					MapLocation attackSpot = rc.senseLocationOf(r);
-					if(rc.canAttackSquare(attackSpot)){
-						rc.attackSquare(attackSpot);
-						rc.broadcast(groupAttackLocation[groupNum], mapLocToInt(attackSpot));
-						System.out.println("Group " + groupNum + " is attacking " + attackSpot);
+			}
+		}else{//if were not injured and we have decent health then attack!
+			if(rc.getHealth() > 40){
+				if(rc.readBroadcast(groupAttackLocation[groupNum]) != -1){//if its group has a target
+					MapLocation groupAttackSpot = intToMapLoc(rc.readBroadcast(groupAttackLocation[groupNum]));
+					//if you can sense the spot, and theres still a robot attack, else tell everyone its gone and try and attack any other bots around
+					if(rc.canSenseSquare(groupAttackSpot)){
+						GameObject objAtLoc = rc.senseObjectAtLocation(groupAttackSpot);
+						if(objAtLoc != null && objAtLoc.getTeam() != rc.getTeam()){
+							if(rc.canAttackSquare(groupAttackSpot)){
+								rc.attackSquare(groupAttackSpot);
+								result = true;
+							}else{
+								moveInDirection(rc, rc.getLocation().directionTo(groupAttackSpot), "sneak");
+								result = true;
+							}
+						}else{
+							System.out.println("Group " + groupNum + " destroyed robot at " + groupAttackSpot);
+							rc.broadcast(groupAttackLocation[groupNum], -1);
+						}
+					}else{
+						moveInDirection(rc, rc.getLocation().directionTo(groupAttackSpot), "sneak");
 						result = true;
 					}
+				}else if(enemiesNear.size() > 0){
+					//if someone has posted a group attack loc
+					for(int i = 0; i < enemiesNear.size(); i++){
+						Robot r = enemiesNear.get(i);
+						MapLocation attackSpot = rc.senseLocationOf(r);
+						if(rc.canAttackSquare(attackSpot)){
+							rc.attackSquare(attackSpot);
+							rc.broadcast(groupAttackLocation[groupNum], mapLocToInt(attackSpot));
+							System.out.println("Group " + groupNum + " is attacking " + attackSpot);
+							result = true;
+						}
+					}
 				}
+			}else{//RRRRRUUUUUUUUUUUUUNNNNNNNNNNNNNNNN
+				rc.broadcast(rc.getRobot().getID() + 50, 1);//IM HURT I need to hide
+				rc.broadcast(numberInjuredInGroup[groupNum], rc.readBroadcast(numberInjuredInGroup[groupNum]) + 1);
+					//compute opposite direction of direction towards average enemy position
+					if(enemiesNear.size() > 0){
+					int counterx = 0;
+					int countery = 0;
+					for(Robot opp: enemiesNear){
+						MapLocation oppLoc = rc.senseLocationOf(opp);
+						counterx += oppLoc.x;
+						countery += oppLoc.y;
+					}
+					MapLocation avg = new MapLocation(counterx / enemiesNear.size(), countery / enemiesNear.size());
+					Direction dirToGoal = rc.getLocation().directionTo(avg).opposite();
+					RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
+					result = true;
+				}
+				
 			}
-		}else{//RRRRRUUUUUUUUUUUUUNNNNNNNNNNNNNNNN
-				//compute opposite direction of direction towards average enemy position
-
-			int counterx = 0;
-			int countery = 0;
-			for(Robot opp: enemiesNear){
-				MapLocation oppLoc = rc.senseLocationOf(opp);
-				counterx += oppLoc.x;
-				countery += oppLoc.y;
-			}
-			MapLocation avg = new MapLocation(counterx / enemiesNear.size(), countery / enemiesNear.size());
-
-			Direction dirToGoal = rc.getLocation().directionTo(avg).opposite();
-			RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
-			result = true;
-			
 		}
 
 		return result;
