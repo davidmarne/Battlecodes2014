@@ -2,6 +2,7 @@ package team071;
 
 import battlecode.common.*;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Arrays;
@@ -45,41 +46,64 @@ public class RobotPlayer {
 		missions robotMission = missions.defense;
 		int groupNum = 0;
 		boolean leaderOfGroup = false;
-
+        boolean alreadyAttacked;
         while(true) {
         	
 			if (rc.getType() == RobotType.HQ) {
 				try {
-                    if (first) {
-                        first = false;
-                        // broadcast this out first and then check for -1 instead of 0, becuase if the map location
-                        // is at (0, 0), then we will never make it out of the loop
-                        rc.broadcast(DefenseGoalLocation, -1);
-                        //group attack locations must also be init'ed -1 so they 0,0 can be a location 
-                        for(int i : groupAttackLocation){
-                        	rc.broadcast(i, -1);
+                    if(rc.isActive()) {
+                        // on the first pass
+                        if (first) {
+                            first = false;
+                            // broadcast this out first and then check for -1 instead of 0, becuase if the map location
+                            // is at (0, 0), then we will never make it out of the loop
+                            rc.broadcast(DefenseGoalLocation, -1);
+                            //group attack locations must also be init'ed -1 so they 0,0 can be a location
+                            for(int i : groupAttackLocation){
+                                rc.broadcast(i, -1);
+                            }
                         }
-                    }
-					Robot[] enemiesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam().opponent());
-					for(Robot r: enemiesNear){
-						if(rc.isActive() && rc.canAttackSquare(rc.senseLocationOf(r)) && rc.senseRobotInfo(r).type != RobotType.HQ){
-							rc.attackSquare(rc.senseLocationOf(r));
-							break;
-						}
-					}
-					
-					//Check if a robot is spawnable and spawn one if it is
-					if (rc.isActive() ) {
+
+                        // first priority - attack nearby enemy robots
+                        Robot[] enemiesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam().opponent());
+
+                        if(enemiesNear.length != 0) {
+                            alreadyAttacked = false;
+                            // attack enemies that are within the attack radius
+                            for(Robot r: enemiesNear){
+                                if(rc.isActive() && rc.canAttackSquare(rc.senseLocationOf(r))){
+                                    rc.attackSquare(rc.senseLocationOf(r));
+                                    alreadyAttacked = true;
+                                    break;
+                                }
+                            }
+
+                            // attack enemies that are within splash dmg radius
+                            if (!alreadyAttacked) {
+                                for(Robot r: enemiesNear){
+                                    MapLocation enemyLocation = rc.senseLocationOf(r);
+                                    MapLocation attackLocation = enemyLocation.add(enemyLocation.directionTo(rc.getLocation()));
+                                    if(rc.isActive() && rc.canAttackSquare(attackLocation)){
+                                        rc.attackSquare(attackLocation);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+					    // Second priority - Check if a robot is spawnable and spawn one if it is
 						if(rc.senseRobotCount() < 25){
 							RobotUtil.intelligentSpawn(rc, rc.getLocation().directionTo(rc.senseEnemyHQLocation()));
 						}
+
 						//if there are 5 new spawnees at the hq send em out
 						if(rc.readBroadcast(startGroup) > 3){
 							rc.broadcast(startGroupGO, 1);
 						}else{
 							rc.broadcast(startGroupGO, 0);
 						}
-						
+
+                        // third priority - single run - calculate a good spot four OUR PASTR
 						if(rc.readBroadcast(DefenseGoalLocation) == -1){
 							//sense a goal location based on PASTR growth
 							while(true){
