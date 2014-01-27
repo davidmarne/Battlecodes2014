@@ -4,6 +4,7 @@ import battlecode.common.*;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Arrays;
 
 public class RobotPlayer {
 	static Random rand;
@@ -22,6 +23,9 @@ public class RobotPlayer {
 	static int startGroupGO = 12;
 	static int sendToAttack = 13;
 	static int towerLocation = 14;
+	static int[] groupAttackLocation = {15,16,17,18,19};
+	static int groupUpdate;
+	
 	
 	public static void run(RobotController rc) {
 		rand = new Random();
@@ -35,6 +39,7 @@ public class RobotPlayer {
 		boolean second = true;
 		MapLocation currentLocation;
 		missions robotMission = missions.defense;
+		int groupNum = 0;
 
         while(true) {
         	
@@ -45,6 +50,9 @@ public class RobotPlayer {
                         // broadcast this out first and then check for -1 instead of 0, becuase if the map location
                         // is at (0, 0), then we will never make it out of the loop
                         rc.broadcast(DefenseGoalLocation, -1);
+                        for(int i : groupAttackLocation){
+                        	rc.broadcast(i, -1);
+                        }
                     }
 					Robot[] enemiesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam().opponent());
 					for(Robot r: enemiesNear){
@@ -105,7 +113,7 @@ public class RobotPlayer {
 				try {
 					if (rc.isActive()) {
 						
-						if(RobotUtil.micro(rc) == true){
+						if(RobotUtil.micro(rc, groupNum) == true){
 							continue;
 						}
 						
@@ -132,6 +140,7 @@ public class RobotPlayer {
 									System.out.println("Retrieved " + goal);
 									robotMission = missions.offense;
 									rc.broadcast(sendToAttack, rc.readBroadcast(sendToAttack) - 1);
+									groupNum = rc.readBroadcast(groupUpdate);
 								}else{
 								    //if a pastr and noisetower havent been made/assigned to a bot
 									if(rc.readBroadcast(buildingProgress) < 2){
@@ -175,7 +184,7 @@ public class RobotPlayer {
 						}
 					}
 				} catch (Exception e) {
-					e.printStackTrace();
+					//e.printStackTrace();
 				}
 			} else if (rc.getType() == RobotType.NOISETOWER) {
 				try {
@@ -212,6 +221,7 @@ public class RobotPlayer {
 	            		int oldOffset = rc.readBroadcast(OffenseCurrentGoalOffset);
 						int n = RobotUtil.getNewGoalPastr(rc, oldOffset, OffenseGoalLocations);
 						if(n != -1){
+							rc.broadcast(groupUpdate, Arrays.binarySearch(OffenseGoalLocations, n) + 1);
 							rc.broadcast(OffenseCurrentGoalOffset, n);
 							System.out.println("GOTO " + RobotUtil.intToMapLoc(rc.readBroadcast(n)));
 							rc.broadcast(sendToAttack, 4);

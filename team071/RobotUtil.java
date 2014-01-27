@@ -11,19 +11,22 @@ import java.util.Random;
  */
 public class RobotUtil {
 	static int DefenseChannelOffset = 10000;
-	static int DefenseGoalLocation = 1;
-	static int[] OffenseChannelOffsets = {20000,30000,40000,50000};
+	static int DefenseGoalLocation = 64999;
 	static int[] OffenseGoalLocations = {2,3,4,5};
-	static int OffenseNewLocation = 6;
 	static int OffenseGoalDestroyed = 7;
 	static int OffenseCurrentGoalOffset = 8;
 	static int buildingProgress = 9;
 	static int numDefendingGoal = 10;
 	static int startGroup = 11;
+	static int startGroupGO = 12;
+	static int sendToAttack = 13;
+	static int towerLocation = 14;
+	static int[] groupAttackLocation = {15,16,17,18,19};
+	static int groupUpdate;
     static Direction allDirections[] = Direction.values();
     static Random rand = new Random();
     
-    public static boolean micro(RobotController rc) throws GameActionException{
+    public static boolean micro(RobotController rc, int groupNum) throws GameActionException{
     	Robot[] robotsNearArr = rc.senseNearbyGameObjects(Robot.class, 35);
     	boolean result = false;
 		ArrayList<Robot> enemiesNear = new ArrayList<Robot>();
@@ -36,32 +39,57 @@ public class RobotUtil {
 				teammatesNear.add(robotsNearArr[i]);
 			}
 		}
-
-		if(enemiesNear.size() > 0){
-			if(rc.getHealth() > 50){
+		if(rc.getHealth() > 40){
+			if(rc.readBroadcast(groupAttackLocation[groupNum]) != -1){
+				MapLocation groupAttackSpot = intToMapLoc(rc.readBroadcast(groupAttackLocation[groupNum]));
+				//if you can sense the spot, and theres still a robot attack, else tell everyone its gone and try and attack any other bots around
+				if(rc.canSenseSquare(groupAttackSpot)){
+					GameObject objAtLoc = rc.senseObjectAtLocation(groupAttackSpot);
+					if(objAtLoc != null && objAtLoc.getTeam() != rc.getTeam()){
+						if(rc.canAttackSquare(groupAttackSpot)){
+							rc.attackSquare(groupAttackSpot);
+							result = true;
+						}else{
+							moveInDirection(rc, rc.getLocation().directionTo(groupAttackSpot), "sneak");
+							result = true;
+						}
+					}else{
+						System.out.println("Group " + groupNum + " destroyed robot at " + groupAttackSpot);
+						rc.broadcast(groupAttackLocation[groupNum], -1);
+					}
+				}else{
+					moveInDirection(rc, rc.getLocation().directionTo(groupAttackSpot), "sneak");
+					result = true;
+				}
+			}else if(enemiesNear.size() > 0){
+				//if someone has posted a group attack loc
 				for(int i = 0; i < enemiesNear.size(); i++){
 					Robot r = enemiesNear.get(i);
-					if(rc.canAttackSquare(rc.senseLocationOf(r))){
-						rc.attackSquare(rc.senseLocationOf(r));
+					MapLocation attackSpot = rc.senseLocationOf(r);
+					if(rc.canAttackSquare(attackSpot)){
+						rc.attackSquare(attackSpot);
+						rc.broadcast(groupAttackLocation[groupNum], mapLocToInt(attackSpot));
+						System.out.println("Group " + groupNum + " is attacking " + attackSpot);
 						result = true;
 					}
 				}
-			}else{
+			}
+		}else{//RRRRRUUUUUUUUUUUUUNNNNNNNNNNNNNNNN
 				//compute opposite direction of direction towards average enemy position
 
-				int counterx = 0;
-				int countery = 0;
-				for(Robot opp: enemiesNear){
-					MapLocation oppLoc = rc.senseLocationOf(opp);
-					counterx += oppLoc.x;
-					countery += oppLoc.y;
-				}
-				MapLocation avg = new MapLocation(counterx / enemiesNear.size(), countery / enemiesNear.size());
-
-				Direction dirToGoal = rc.getLocation().directionTo(avg).opposite();
-				RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
-				result = true;
+			int counterx = 0;
+			int countery = 0;
+			for(Robot opp: enemiesNear){
+				MapLocation oppLoc = rc.senseLocationOf(opp);
+				counterx += oppLoc.x;
+				countery += oppLoc.y;
 			}
+			MapLocation avg = new MapLocation(counterx / enemiesNear.size(), countery / enemiesNear.size());
+
+			Direction dirToGoal = rc.getLocation().directionTo(avg).opposite();
+			RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
+			result = true;
+			
 		}
 
 		return result;
