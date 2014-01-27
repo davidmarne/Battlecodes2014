@@ -53,6 +53,7 @@ public class RobotPlayer {
                         // broadcast this out first and then check for -1 instead of 0, becuase if the map location
                         // is at (0, 0), then we will never make it out of the loop
                         rc.broadcast(DefenseGoalLocation, -1);
+                        //group attack locations must also be init'ed -1 so they 0,0 can be a location 
                         for(int i : groupAttackLocation){
                         	rc.broadcast(i, -1);
                         }
@@ -115,12 +116,6 @@ public class RobotPlayer {
 			} else if (rc.getType() == RobotType.SOLDIER) {
 				try {
 					if (rc.isActive()) {
-						
-						if(RobotUtil.micro(rc, groupNum) == true){
-							rc.yield();
-							continue;
-						}
-						
 						if(first || second){
 							//get map to our pastr if possible
 							if(rc.readBroadcast(DefenseGoalLocation) >= 0 && first){
@@ -135,6 +130,12 @@ public class RobotPlayer {
 								second = false;
 							}
 						}else{
+							
+							if(RobotUtil.micro(rc, groupNum) == true){
+								rc.yield();
+								continue;
+							}
+							
 							currentLocation = rc.getLocation();
 							
 							if(robotMission == missions.defense){
