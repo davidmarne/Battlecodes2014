@@ -506,6 +506,7 @@ public class RobotUtil {
     	return closestPASTR;
     }
     
+    //need to iron out lastOffstet ish
     public static int getNewGoalPastr(RobotController rc, int lastOffset, int[] channels) throws GameActionException{
     	ArrayList<Integer> populatedChannels = new ArrayList<Integer>();
     	for(int channel : channels){
