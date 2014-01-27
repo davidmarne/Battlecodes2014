@@ -12,7 +12,7 @@ public class RobotPlayer {
     }
 	
 	static int DefenseChannelOffset = 10000;
-	static int DefenseGoalLocation = 1;
+	static int DefenseGoalLocation = 64999;
 	static int[] OffenseGoalLocations = {2,3,4,5};
 	static int OffenseGoalDestroyed = 7;
 	static int OffenseCurrentGoalOffset = 8;
@@ -30,17 +30,22 @@ public class RobotPlayer {
 		int mapHeight = rc.getMapHeight();
 		int[][] map = new int[mapWidth][mapHeight];
 		MapLocation goal = new MapLocation(0,0);
+        MapLocation ourPASTR = new MapLocation(0,0);
 		boolean first = true;
 		boolean second = true;
 		MapLocation currentLocation;
 		missions robotMission = missions.defense;
-		
-		
-		
+
         while(true) {
         	
 			if (rc.getType() == RobotType.HQ) {
 				try {
+                    if (first) {
+                        first = false;
+                        // broadcast this out first and then check for -1 instead of 0, becuase if the map location
+                        // is at (0, 0), then we will never make it out of the loop
+                        rc.broadcast(DefenseGoalLocation, -1);
+                    }
 					Robot[] enemiesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam().opponent());
 					for(Robot r: enemiesNear){
 						if(rc.isActive() && rc.canAttackSquare(rc.senseLocationOf(r)) && rc.senseRobotInfo(r).type != RobotType.HQ){
@@ -61,26 +66,27 @@ public class RobotPlayer {
 							rc.broadcast(startGroupGO, 0);
 						}
 						
-						if(rc.readBroadcast(DefenseGoalLocation) == 0){
-							//sense a goal location based on pastr growth
+						if(rc.readBroadcast(DefenseGoalLocation) == -1){
+							//sense a goal location based on PASTR growth
 							while(true){
-								goal = RobotUtil.sensePASTRGoal3(rc, mapWidth, mapHeight);
-								if(!goal.equals(new MapLocation(-1,-1))){
+                                ourPASTR = RobotUtil.sensePASTRGoal3(rc, mapWidth, mapHeight);
+
+                                // keep calculating goals until one returns that is not the initial one
+                                if(ourPASTR.x != -1 && ourPASTR.y != -1) {
 									break;
 								}
 							}
 							//Pathing Algorithm
-	                        map = RobotUtil.assessMapWithDirection(rc, goal, map);
-	                        RobotUtil.logMap(map);
+	                        map = RobotUtil.assessMapWithDirection(rc, ourPASTR, map);
 	                        //broadcast the map out for other robots to read
 	                        RobotUtil.broadcastMap(rc, map, DefenseChannelOffset);
 	                        //let everyone know the goal location
-	                        rc.broadcast(DefenseGoalLocation, RobotUtil.mapLocToInt(goal));
+	                        rc.broadcast(DefenseGoalLocation, RobotUtil.mapLocToInt(ourPASTR));
 						}else{
 							//if a new map can be computed do so
 							for(int channel: OffenseGoalLocations){
 								if(rc.readBroadcast(channel) == 0){
-									goal = RobotUtil.getPastrToMakeGoal(rc, OffenseGoalLocations);
+									goal = RobotUtil.getPastrToMakeGoal(rc, OffenseGoalLocations, ourPASTR);
 									if(goal != null){
 										map = RobotUtil.assessMapWithDirection(rc, goal, new int[mapWidth][mapHeight]);
 										rc.broadcast(channel, RobotUtil.mapLocToInt(goal));
@@ -93,7 +99,7 @@ public class RobotPlayer {
 						}
 					}
 				} catch (Exception e) {
-					System.out.println("HQ Exception");
+					e.printStackTrace();
 				}
 			} else if (rc.getType() == RobotType.SOLDIER) {
 				try {
@@ -105,7 +111,7 @@ public class RobotPlayer {
 						
 						if(first || second){
 							//get map to our pastr if possible
-							if(rc.readBroadcast(DefenseGoalLocation) > 0 && first){
+							if(rc.readBroadcast(DefenseGoalLocation) >= 0 && first){
 								//all bots go to our pastr to rally
 								goal = RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation));
 								robotMission = missions.defense;
@@ -169,7 +175,7 @@ public class RobotPlayer {
 						}
 					}
 				} catch (Exception e) {
-					//e.printStackTrace();
+					e.printStackTrace();
 				}
 			} else if (rc.getType() == RobotType.NOISETOWER) {
 				try {
@@ -225,7 +231,7 @@ public class RobotPlayer {
 						}
 	            	}
             	}catch (Exception e) {
-					//e.printStackTrace();
+					e.printStackTrace();
 				}
             }
 			

@@ -28,7 +28,7 @@ public class RobotUtil {
     	boolean result = false;
 		ArrayList<Robot> enemiesNear = new ArrayList<Robot>();
 		ArrayList<Robot> teammatesNear = new ArrayList<Robot>();
-		
+
 		for(int i = 0; i < robotsNearArr.length; i++){
 			if(robotsNearArr[i].getTeam() != rc.getTeam() && rc.senseRobotInfo(robotsNearArr[i]).type != RobotType.HQ){
 				enemiesNear.add(robotsNearArr[i]);
@@ -36,7 +36,7 @@ public class RobotUtil {
 				teammatesNear.add(robotsNearArr[i]);
 			}
 		}
-		
+
 		if(enemiesNear.size() > 0){
 			if(rc.getHealth() > 50){
 				for(int i = 0; i < enemiesNear.size(); i++){
@@ -48,7 +48,7 @@ public class RobotUtil {
 				}
 			}else{
 				//compute opposite direction of direction towards average enemy position
-				
+
 				int counterx = 0;
 				int countery = 0;
 				for(Robot opp: enemiesNear){
@@ -57,17 +57,29 @@ public class RobotUtil {
 					countery += oppLoc.y;
 				}
 				MapLocation avg = new MapLocation(counterx / enemiesNear.size(), countery / enemiesNear.size());
-				
+
 				Direction dirToGoal = rc.getLocation().directionTo(avg).opposite();
 				RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
 				result = true;
 			}
 		}
-		
+
 		return result;
     }
     
     
+    public static void logMap(double[][] map) {
+        int mapWidth = map.length;
+        int mapHeight = map[0].length;
+        System.out.print("\n");
+        for (int i = 0; i < mapHeight; i++) {
+            for (int j = 0; j < mapWidth; j++) {
+                System.out.print((int)map[j][i] + " ");
+            }
+            System.out.print("\n");
+        }
+    }
+
     public static void logMap(int[][] map) {
         int mapWidth = map.length;
         int mapHeight = map[0].length;
@@ -341,13 +353,15 @@ public class RobotUtil {
     }
     
     public static MapLocation sensePASTRGoal3(RobotController rc, int mapWidth, int mapHeight){
-    	Random rand = new Random();
-    	int avg = (mapWidth+mapHeight) / 2;
+
+    	int avg = mapWidth + mapHeight;
     	double[][] map = rc.senseCowGrowth();
     	mapWidth--;
     	mapHeight--;
-    	double max = 0;
+    	double largestCowGrowth = -1;
     	MapLocation maxLoc = new MapLocation(-1,-1);
+        int closestGoalDistance = 999;
+        double totalCows;
     	
     	for(int i = 0; i <  avg; i++){
     		int currentWidth = rand.nextInt() % mapWidth;
@@ -355,21 +369,33 @@ public class RobotUtil {
     		MapLocation potentialGoal = new MapLocation(currentWidth, currentHeight);
     		
     		if(rc.senseTerrainTile(potentialGoal).ordinal() != 2 && rc.senseTerrainTile(potentialGoal).ordinal() != 3 && potentialGoal.distanceSquaredTo(rc.senseEnemyHQLocation()) > 100){
-    			double total = 0;
-	    		
-	    		for(int j = -3; j <= 3; j++){
-	    			for(int k = -3; k <= 3; k++){
+                totalCows = 0;
+	    		for(int j = -4; j <= 4; j++){
+	    			for(int k = -4; k <= 4; k++){
 	    				int x = currentWidth+j;
 	    				int y = currentHeight+k;
-	    				if(x >= 0 && y >=0 && x < mapWidth && y < mapHeight){
-	    					total += map[x][y];
+                        // make sure that we are only accessing squares within the bounds of our map array
+	    				if(x >= 0 && y >= 0 && x < mapWidth && y < mapHeight){
+                            totalCows += map[x][y];
 	    				}
 	    			}
 	    		}
-	    		if(total > max){
-	    			max = total;
-	    			maxLoc = potentialGoal;
+	    		if(totalCows > largestCowGrowth) {
+                    largestCowGrowth = totalCows;
+                    closestGoalDistance = potentialGoal.distanceSquaredTo(rc.senseHQLocation());
+                    System.out.println("1. last best goal: " + maxLoc + ", new best goal: " + potentialGoal + ", total growth: " + totalCows);
+                    maxLoc = potentialGoal;
 	    		}
+
+                // if the new sample has the same amount of cows as the previous best location
+                // then chose the location that is closest to our HQ
+                if (totalCows == largestCowGrowth) {
+                    if (closestGoalDistance > potentialGoal.distanceSquaredTo(rc.senseHQLocation())) {
+                        closestGoalDistance = potentialGoal.distanceSquaredTo(rc.senseHQLocation());
+                        System.out.println("2. last best goal: " + maxLoc + ", new best goal: " + potentialGoal + ", total growth: " + totalCows);
+                        maxLoc = potentialGoal;
+                    }
+                }
     		}
     	}
     	
@@ -398,9 +424,8 @@ public class RobotUtil {
     	}
     	return map;
     }
-    public static MapLocation getPastrToMakeGoal(RobotController rc, int[] channels) throws GameActionException{
+    public static MapLocation getPastrToMakeGoal(RobotController rc, int[] channels, MapLocation ourPASTR) throws GameActionException{
     	MapLocation[] pastrLocs = rc.sensePastrLocations(rc.getTeam().opponent());
-        MapLocation ourPASTR = rc.sensePastrLocations(rc.getTeam())[0];
 
         MapLocation closestPASTR = null;
         int smallestDistance = 9999;
