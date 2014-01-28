@@ -27,8 +27,12 @@ public class RobotUtil {
 	static int groupLeaderPicked = 21;
     static Direction allDirections[] = Direction.values();
     static Random rand = new Random();
+    public static enum missions{
+        defense, offense;
+    }
     
     public static boolean micro(RobotController rc, int groupNum) throws GameActionException{
+    	
     	Robot[] robotsNearArr = rc.senseNearbyGameObjects(Robot.class, 35);
     	boolean result = false;
 		ArrayList<Robot> enemiesNear = new ArrayList<Robot>();
@@ -212,6 +216,7 @@ public class RobotUtil {
 
     public static int[][] assessMapWithDirection(RobotController rc, MapLocation goal, int[][] map) throws GameActionException {
         ArrayDeque<MapLocation> queue = new ArrayDeque<MapLocation>();
+        ArrayDeque<MapLocation> enemyQueue = new ArrayDeque<MapLocation>();
         int mapWidth = map.length;
         int mapHeight = map[0].length;
         int currentX;
@@ -220,8 +225,33 @@ public class RobotUtil {
         map[goal.x][goal.y] = 9;
         MapLocation temp = rc.senseHQLocation();
         map[temp.x][temp.y] = 9;
-        temp = rc.senseEnemyHQLocation();
-        map[temp.x][temp.y] = 9;
+        MapLocation enemyHq = rc.senseEnemyHQLocation();
+        map[enemyHq.x][enemyHq.y] = 9;
+        
+        enemyQueue.add(enemyHq);
+        while(!enemyQueue.isEmpty()){
+        	currentLocation = enemyQueue.poll();
+            currentX = currentLocation.x;
+            currentY = currentLocation.y;
+            
+            for(Direction dir : allDirections){
+            	temp = currentLocation.add(dir);
+            	if(temp.x != -1 && temp.y != -1 && temp.x < mapWidth && temp.y < mapHeight){
+	            	if(map[temp.x][temp.y] != 9 && enemyHq.distanceSquaredTo(temp) < 20){
+	            		boolean nextToWall = false;
+	            		for(Direction direc : allDirections){
+	            			if(rc.senseTerrainTile(temp.add(direc)).ordinal() == 2){
+	            				nextToWall = true;
+	            			}
+	            		}
+	            		if(!nextToWall){
+		            		map[temp.x][temp.y] = 9;
+		            		enemyQueue.add(temp);
+	            		}
+	            	}
+            	}
+            }
+        }
         
         // we want map locations in the queue
         queue.add(goal);
@@ -510,10 +540,11 @@ public class RobotUtil {
     public static int getNewGoalPastr(RobotController rc, int lastOffset, int[] channels) throws GameActionException{
     	ArrayList<Integer> populatedChannels = new ArrayList<Integer>();
     	for(int channel : channels){
-    		if(channel != lastOffset && rc.readBroadcast(channel) != 0){
+    		if(channel != lastOffset && rc.readBroadcast(channel) != -1){
     			populatedChannels.add(channel);
     		}
     	}
+    	
     	if(populatedChannels.size() > 0){
     		int max = Integer.MAX_VALUE;
         	int result = -1;
