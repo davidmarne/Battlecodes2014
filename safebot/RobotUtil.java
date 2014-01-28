@@ -126,4 +126,65 @@ public class RobotUtil {
         }
         return path;
     }
+
+    private static int shortestDistance;
+    private static boolean onWall;
+
+    /**
+     * Method assess the bots current location and returns the next direction according to our bug path, or null
+     */
+    public static Direction bugPathNextSquare(RobotController rc, MapLocation currentLocation, MapLocation destination) throws GameActionException {
+        int terrain;
+        MapLocation targetLocation;
+        int currentDistance = currentLocation.distanceSquaredTo(destination);
+        System.out.println("Destination loc: (" + destination.x + ", " + destination.y + ")");
+
+        // we are at out destination
+        if(currentLocation.x == destination.x && currentLocation.y == destination.y) {
+            return null;
+        }
+        Direction dir = currentLocation.directionTo(destination);
+        targetLocation = currentLocation.add(dir);
+        terrain = rc.senseTerrainTile(targetLocation).ordinal();
+
+        // if we can move in the direction of the destination
+        if(!onWall && terrain != 2 && terrain != 3) {
+            shortestDistance = currentDistance;
+            return dir;
+            // we can not move towards the destination because there is a wall
+        } else {
+            onWall = true;
+            MapLocation temp = currentLocation.add(currentLocation.directionTo(destination));
+            terrain = rc.senseTerrainTile(temp).ordinal();
+            // if we ever get closer to our destination, and the square towards is open, leave wall
+            if (currentDistance >= shortestDistance && terrain != 2 && terrain != 3) {
+                onWall = false;
+                bugPathNextSquare(rc, currentLocation, destination);
+            }
+
+            // while the targetLocation is a wall, rotate and update to new target location
+            // this deals with if we need to rotate left
+            int counter = 0;
+            terrain = rc.senseTerrainTile(targetLocation).ordinal();
+            while (terrain == 2 || terrain == 3) {
+                counter += 1;
+                dir = dir.rotateLeft();
+                targetLocation = currentLocation.add(dir);
+                terrain = rc.senseTerrainTile(targetLocation).ordinal();
+            }
+            if (counter > 0) {
+                return dir;
+            }
+            // if the wall on our right disappears
+            // this deals with if we need to rotate right
+            MapLocation wallLocation = currentLocation.add(dir.rotateRight().rotateRight());
+            terrain = rc.senseTerrainTile(wallLocation).ordinal();
+            if(terrain != 2 && terrain != 3) {
+                dir = dir.rotateRight().rotateRight();
+                return dir;
+            } else {
+                return dir;
+            }
+        }
+    }
 }

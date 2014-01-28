@@ -55,7 +55,7 @@ public class RobotPlayer {
                         if (first) {
                         	System.out.println("WORKING");
                             first = false;
-                            // broadcast this out first and then check for -1 instead of 0, becuase if the map location
+                            // broadcast this out first and then check for -1 instead of 0, because if the map location
                             // is at (0, 0), then we will never make it out of the loop
                             rc.broadcast(DefenseGoalLocation, -1);
                             rc.broadcast(OffenseCurrentGoalOffset, -1);
