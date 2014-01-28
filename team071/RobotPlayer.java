@@ -100,7 +100,7 @@ public class RobotPlayer {
 						}
 
 						//if there are 5 new spawnees at the hq send em out
-						if(rc.readBroadcast(startGroup) > 2){
+						if(rc.readBroadcast(startGroup) > 3){
 							rc.broadcast(startGroupGO, 1);
 						}else{
 							rc.broadcast(startGroupGO, 0);
@@ -157,11 +157,17 @@ public class RobotPlayer {
 					if (rc.isActive()) {
 						if(first || second){
 							//get map to our pastr if possible
-							if(rc.readBroadcast(DefenseGoalLocation) >= 0 && first){
-								//all bots go to our pastr to rally
-								goal = RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation));
-								robotMission = missions.defense;
-								first = false;
+							if(rc.readBroadcast(offenseInitialized) == 0 && first){
+								if(rc.readBroadcast(DefenseGoalLocation) >= 0 ){
+									//all bots go to our pastr to rally
+									goal = RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation));
+									robotMission = missions.defense;
+									first = false;
+								}
+							}else if(rc.readBroadcast(offenseInitialized) == 1 && first){
+								goal = RobotUtil.intToMapLoc(rc.readBroadcast(rc.readBroadcast(OffenseCurrentGoalOffset)));
+								robotMission = missions.offense;
+								first = false;	
 							}
 							//when a group of five or more has been gathered we can finally go to goal
 							if(rc.readBroadcast(startGroupGO) == 1){
