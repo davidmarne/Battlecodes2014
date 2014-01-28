@@ -101,7 +101,7 @@ public class RobotPlayer {
 						}
 
 						//if there are 5 new spawnees at the hq send em out
-						if(rc.readBroadcast(startGroup) > 3){
+						if(rc.readBroadcast(startGroup) > 1){
 							rc.broadcast(startGroupGO, 1);
 						}else{
 							rc.broadcast(startGroupGO, 0);
@@ -301,7 +301,7 @@ public class RobotPlayer {
             }else if(rc.getType() == RobotType.PASTR){
             	try{
             		Robot[] teammatesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam());
-            		if(teammatesNear.length < 4){//get more guards
+            		if(teammatesNear.length < 4 || rc.getHealth() < 33){//get more guards
             			rc.broadcast(pastrNeedsReinforcements, 6 - teammatesNear.length);
             		}else if(rc.readBroadcast(offenseInitialized) == 0 && teammatesNear.length > 9){
             			int oldOffset = rc.readBroadcast(OffenseCurrentGoalOffset);
