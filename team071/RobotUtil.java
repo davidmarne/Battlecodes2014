@@ -37,18 +37,27 @@ public class RobotUtil {
     	boolean result = false;
 		ArrayList<Robot> enemiesNear = new ArrayList<Robot>();
 		ArrayList<Robot> teammatesNear = new ArrayList<Robot>();
+		int selfDestructCounter = 0;
 
 		for(int i = 0; i < robotsNearArr.length; i++){
 			if(robotsNearArr[i].getTeam() != rc.getTeam() && rc.senseRobotInfo(robotsNearArr[i]).type != RobotType.HQ){
 				enemiesNear.add(robotsNearArr[i]);
+				if(rc.getLocation().distanceSquaredTo(rc.senseLocationOf(robotsNearArr[i])) <= 2){
+					selfDestructCounter++;
+				}
 			}else if(robotsNearArr[i].getTeam() == rc.getTeam() && rc.senseRobotInfo(robotsNearArr[i]).type != RobotType.PASTR && rc.senseRobotInfo(robotsNearArr[i]).type != RobotType.NOISETOWER){
 				teammatesNear.add(robotsNearArr[i]);
+				if(rc.getLocation().distanceSquaredTo(rc.senseLocationOf(robotsNearArr[i])) <= 2){
+					selfDestructCounter--;
+				}
 			}
+		}//if more guys than just i die go for it
+		if(selfDestructCounter > 1){
+			rc.selfDestruct();
 		}
-		
 		//if the the robot is injured flee
 		if(rc.readBroadcast(rc.getRobot().getID() + 50) == 1){
-			if(rc.getHealth() > 70){
+			if(rc.getHealth() > 60){
 				rc.broadcast(rc.getRobot().getID() + 50, 0);
 				rc.broadcast(numberInjuredInGroup[groupNum], rc.readBroadcast(numberInjuredInGroup[groupNum]) - 1);
 			}else{
@@ -68,7 +77,7 @@ public class RobotUtil {
 				}
 			}
 		}else{//if were not injured and we have decent health then attack!
-			if(rc.getHealth() > 40){
+			if(rc.getHealth() > 30){
 				if(rc.readBroadcast(groupAttackLocation[groupNum]) != -1){//if its group has a target
 					MapLocation groupAttackSpot = intToMapLoc(rc.readBroadcast(groupAttackLocation[groupNum]));
 					//if you can sense the spot, and theres still a robot attack, else tell everyone its gone and try and attack any other bots around
@@ -79,6 +88,7 @@ public class RobotUtil {
 								rc.attackSquare(groupAttackSpot);
 								result = true;
 							}else{
+								//**********this needs to be bug path when its working************
 								moveInDirection(rc, rc.getLocation().directionTo(groupAttackSpot), "sneak");
 								result = true;
 							}
@@ -87,6 +97,7 @@ public class RobotUtil {
 							rc.broadcast(groupAttackLocation[groupNum], -1);
 						}
 					}else{
+						//**********this needs to be bug path when its working************
 						moveInDirection(rc, rc.getLocation().directionTo(groupAttackSpot), "sneak");
 						result = true;
 					}
