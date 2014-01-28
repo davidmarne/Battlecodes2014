@@ -2,10 +2,7 @@ package team071;
 
 import battlecode.common.*;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Random;
-import java.util.Arrays;
 
 public class RobotPlayer {
 	static Random rand;
@@ -53,7 +50,6 @@ public class RobotPlayer {
                     if(rc.isActive()) {
                         // on the first pass
                         if (first) {
-                        	System.out.println("WORKING");
                             first = false;
                             // broadcast this out first and then check for -1 instead of 0, because if the map location
                             // is at (0, 0), then we will never make it out of the loop
@@ -141,8 +137,8 @@ public class RobotPlayer {
 								if(rc.readBroadcast(channel) == -1){
 									goal = RobotUtil.getPastrToMakeGoal(rc, OffenseGoalLocations, ourPASTR);
 									if(goal != null){
-										map = RobotUtil.assessMapWithDirection(rc, goal, new int[mapWidth][mapHeight]);
 										rc.broadcast(channel, RobotUtil.mapLocToInt(goal));
+										map = RobotUtil.assessMapWithDirection(rc, goal, new int[mapWidth][mapHeight]);
 										RobotUtil.broadcastMap(rc, map, channel*10000);
 										System.out.println(goal+ " has been added to " +channel);
 										break;
@@ -175,8 +171,11 @@ public class RobotPlayer {
 							if(rc.readBroadcast(startGroupGO) == 1){
 								rc.broadcast(startGroup, rc.readBroadcast(startGroup) - 1);
 								second = false;
+							}else{
+								
 							}
 						}else{
+							int startBC = Clock.getBytecodeNum();
 							boolean result;
 							if(robotMission == missions.defense){
 								result = RobotUtil.micro(rc, 0);
@@ -195,6 +194,7 @@ public class RobotPlayer {
 										rc.broadcast(reinforcementsSent, rc.readBroadcast(reinforcementsSent) - 1);
 										
 									}else*/ 
+									//startBC = Clock.getBytecodeNum();
 									if(rc.readBroadcast(sendToAttack) > 0){
 										goal = RobotUtil.intToMapLoc(rc.readBroadcast(rc.readBroadcast(OffenseCurrentGoalOffset)));
 										System.out.println("Retrieved " + goal);
@@ -228,7 +228,7 @@ public class RobotPlayer {
 										Direction dirToGoal = directions[intToGoal];
 										RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
 									}
-								
+									//System.out.println("Defense ByteCodes: " + (Clock.getBytecodeNum() - startBC));
 								}else{
 									//if many are injured in group ask for reinforcements
 									/*
@@ -238,7 +238,7 @@ public class RobotPlayer {
 										}
 									}
 									*/
-									
+									//startBC = Clock.getBytecodeNum();
 									if(rc.readBroadcast(pastrNeedsReinforcements) > 0){
 										robotMission = missions.defense;
 										goal = RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation));
@@ -264,8 +264,10 @@ public class RobotPlayer {
 										Direction dirToGoal = directions[intToGoal];
 										RobotUtil.moveInDirection(rc, dirToGoal, "move");
 									}
+									//System.out.println("Offense ByteCodes: " + (Clock.getBytecodeNum() - startBC));
 								}
 							}
+							System.out.println("MICRO BYTECODES: " + (Clock.getBytecodeNum() - startBC));
 						}
 					}
 				} catch (Exception e) {
@@ -340,7 +342,9 @@ public class RobotPlayer {
 							rc.yield();
 						}
             		}else if(rc.readBroadcast(offenseInitialized) == 1 && teammatesNear.length > 8){
-            			rc.broadcast(sendToAttack, 4);
+            			if(rc.readBroadcast(OffenseCurrentGoalOffset) != -1){
+            				rc.broadcast(sendToAttack, 4);
+            			}
             			rc.yield();
 						rc.yield();
 						rc.yield();

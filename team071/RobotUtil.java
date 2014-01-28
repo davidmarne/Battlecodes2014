@@ -30,35 +30,31 @@ public class RobotUtil {
     
     public static boolean micro(RobotController rc, int groupNum) throws GameActionException{
     	
-    	Robot[] robotsNearArr = rc.senseNearbyGameObjects(Robot.class, 35);
     	boolean result = false;
-		ArrayList<Robot> enemiesNear = new ArrayList<Robot>();
-		ArrayList<Robot> teammatesNear = new ArrayList<Robot>();
+    	Robot[] enemiesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam().opponent());
+    	Robot[] teammatesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam());
 		int selfDestructCounter = 0;
 
-		for(int i = 0; i < robotsNearArr.length; i++){
-			if(robotsNearArr[i].getTeam() != rc.getTeam() && rc.senseRobotInfo(robotsNearArr[i]).type != RobotType.HQ){
-				enemiesNear.add(robotsNearArr[i]);
-				if(rc.getLocation().distanceSquaredTo(rc.senseLocationOf(robotsNearArr[i])) <= 2){
-					selfDestructCounter++;
-				}
-			}else if(robotsNearArr[i].getTeam() == rc.getTeam() && rc.senseRobotInfo(robotsNearArr[i]).type != RobotType.PASTR && rc.senseRobotInfo(robotsNearArr[i]).type != RobotType.NOISETOWER){
-				teammatesNear.add(robotsNearArr[i]);
-				if(rc.getLocation().distanceSquaredTo(rc.senseLocationOf(robotsNearArr[i])) <= 2){
-					selfDestructCounter--;
-				}
+		for(Robot r: enemiesNear){
+			if(rc.getLocation().distanceSquaredTo(rc.senseLocationOf(r)) <= 2){
+				selfDestructCounter++;
 			}
-		}//if more guys than just i die go for it
-		if(selfDestructCounter > 1){
-			rc.selfDestruct();
 		}
-		//if the the robot is injured flee
-		if(rc.readBroadcast(rc.getRobot().getID() + 50) == 1){
+		for(Robot r: teammatesNear){
+			if(rc.getLocation().distanceSquaredTo(rc.senseLocationOf(r)) <= 2){
+				selfDestructCounter--;
+			}
+		}
+		//if more guys than just i die go for it
+		if(selfDestructCounter > 1){
+			System.out.println("BOOOOOOOOOOOOOOOOOOOOOOOOOOOM");
+			rc.selfDestruct();
+		}else if(rc.readBroadcast(rc.getRobot().getID() + 50) == 1){//if injured
 			if(rc.getHealth() > 60){
 				rc.broadcast(rc.getRobot().getID() + 50, 0);
 				rc.broadcast(numberInjuredInGroup[groupNum], rc.readBroadcast(numberInjuredInGroup[groupNum]) - 1);
 			}else{
-				if(enemiesNear.size() > 0){//run like a little girl
+				if(enemiesNear.length > 0){//run like a little girl
 					int counterx = 0;
 					int countery = 0;
 					for(Robot opp: enemiesNear){
@@ -66,12 +62,12 @@ public class RobotUtil {
 						counterx += oppLoc.x;
 						countery += oppLoc.y;
 					}
-					MapLocation avg = new MapLocation(counterx / enemiesNear.size(), countery / enemiesNear.size());
+					MapLocation avg = new MapLocation(counterx / enemiesNear.length, countery / enemiesNear.length);
 		
 					Direction dirToGoal = rc.getLocation().directionTo(avg).opposite();
 					RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
-					result = true;
 				}
+				result = true;
 			}
 		}else{//if were not injured and we have decent health then attack!
 			if(rc.getHealth() > 30){
@@ -80,28 +76,51 @@ public class RobotUtil {
 					//if you can sense the spot, and theres still a robot attack, else tell everyone its gone and try and attack any other bots around
 					if(rc.canSenseSquare(groupAttackSpot)){
 						GameObject objAtLoc = rc.senseObjectAtLocation(groupAttackSpot);
-						if(objAtLoc != null && objAtLoc.getTeam() != rc.getTeam()){
-							if(rc.canAttackSquare(groupAttackSpot)){
+						if(objAtLoc != null && objAtLoc.getTeam() != rc.getTeam()){//if there is still a robot at the spot
+							if(rc.canAttackSquare(groupAttackSpot)){//if we can attack do so
 								rc.attackSquare(groupAttackSpot);
 								result = true;
-							}else{
-								//**********this needs to be bug path when its working************
-								moveInDirection(rc, rc.getLocation().directionTo(groupAttackSpot), "sneak");
-								result = true;
+							}else{//else if there is an enemy attackable do so, or else move towards group attack spot
+								boolean flag = false;
+								for(Robot r: enemiesNear){
+									MapLocation temp = rc.senseLocationOf(r);
+									if(rc.canAttackSquare(temp)){
+										rc.attackSquare(temp);
+										flag = true;
+									}
+								}
+								if(!flag){
+									moveInDirection(rc, bugPathNextSquare(rc, rc.getLocation(), groupAttackSpot), "move");
+									result = true;
+								}
 							}
-						}else{
+						}else{//else there is no object so tell group and try to attack others close
 							System.out.println("Group " + groupNum + " destroyed robot at " + groupAttackSpot);
 							rc.broadcast(groupAttackLocation[groupNum], -1);
+							for(Robot r: enemiesNear){
+								MapLocation temp = rc.senseLocationOf(r);
+								if(rc.canAttackSquare(temp)){
+									rc.attackSquare(temp);
+									result = true;
+								}
+							}
 						}
-					}else{
-						//**********this needs to be bug path when its working************
-						moveInDirection(rc, rc.getLocation().directionTo(groupAttackSpot), "sneak");
-						result = true;
+					}else{//else you are not close to the spot if you can hit a robot do so, or else move towards group attck location
+						boolean flag = false;
+						for(Robot r: enemiesNear){
+							MapLocation temp = rc.senseLocationOf(r);
+							if(rc.canAttackSquare(temp)){
+								rc.attackSquare(temp);
+								flag = true;
+							}
+						}
+						if(!flag){
+							moveInDirection(rc, bugPathNextSquare(rc, rc.getLocation(), groupAttackSpot), "move");
+							result = true;
+						}
 					}
-				}else if(enemiesNear.size() > 0){
-					//if someone has posted a group attack loc
-					for(int i = 0; i < enemiesNear.size(); i++){
-						Robot r = enemiesNear.get(i);
+				}else if(enemiesNear.length > 0){//there is no group attack loc so try and attack those close. if you can tell the others his loc
+					for(Robot r: enemiesNear){
 						MapLocation attackSpot = rc.senseLocationOf(r);
 						if(rc.canAttackSquare(attackSpot)){
 							rc.attackSquare(attackSpot);
@@ -115,7 +134,7 @@ public class RobotUtil {
 				rc.broadcast(rc.getRobot().getID() + 50, 1);//IM HURT I need to hide
 				rc.broadcast(numberInjuredInGroup[groupNum], rc.readBroadcast(numberInjuredInGroup[groupNum]) + 1);
 					//compute opposite direction of direction towards average enemy position
-					if(enemiesNear.size() > 0){
+				if(enemiesNear.length > 0){
 					int counterx = 0;
 					int countery = 0;
 					for(Robot opp: enemiesNear){
@@ -123,12 +142,11 @@ public class RobotUtil {
 						counterx += oppLoc.x;
 						countery += oppLoc.y;
 					}
-					MapLocation avg = new MapLocation(counterx / enemiesNear.size(), countery / enemiesNear.size());
+					MapLocation avg = new MapLocation(counterx / enemiesNear.length, countery / enemiesNear.length);
 					Direction dirToGoal = rc.getLocation().directionTo(avg).opposite();
 					RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
-					result = true;
 				}
-				
+				result = true;
 			}
 		}
 

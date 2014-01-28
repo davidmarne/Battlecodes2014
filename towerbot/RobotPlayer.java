@@ -168,7 +168,7 @@ public class RobotPlayer {
 									Direction dirToGoal = directions[intToGoal];
                                     RobotUtil.moveInDirection(rc, dirToGoal, "move");
 								}else{
-									System.out.println("GOAL IS HIT");
+									//System.out.println("GOAL IS HIT");
 									rc.attackSquare(goal);
 								}
 							}
