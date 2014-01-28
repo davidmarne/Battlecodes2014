@@ -238,16 +238,8 @@ public class RobotUtil {
             	temp = currentLocation.add(dir);
             	if(temp.x != -1 && temp.y != -1 && temp.x < mapWidth && temp.y < mapHeight){
 	            	if(map[temp.x][temp.y] != 9 && enemyHq.distanceSquaredTo(temp) < 20){
-	            		boolean nextToWall = false;
-	            		for(Direction direc : allDirections){
-	            			if(rc.senseTerrainTile(temp.add(direc)).ordinal() == 2){
-	            				nextToWall = true;
-	            			}
-	            		}
-	            		if(!nextToWall){
-		            		map[temp.x][temp.y] = 9;
-		            		enemyQueue.add(temp);
-	            		}
+	            		map[temp.x][temp.y] = 9;
+	            		enemyQueue.add(temp);
 	            	}
             	}
             }

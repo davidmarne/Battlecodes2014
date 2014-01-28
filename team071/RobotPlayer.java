@@ -30,6 +30,7 @@ public class RobotPlayer {
 	static int reinforcementsNeeded = 27;
 	static int reinforcementsSent = 28;
 	static int offenseInitialized = 29;
+	static int noNewPastrToAttack = 30;
 	//every robotID + 50 is the robots healing boolean
 	
 	public static void run(RobotController rc) {
@@ -44,15 +45,14 @@ public class RobotPlayer {
 		boolean second = true;
 		MapLocation currentLocation;
 		missions robotMission = missions.defense;
-		boolean leaderOfGroup = false;
         boolean alreadyAttacked;
         while(true) {
-        	
 			if (rc.getType() == RobotType.HQ) {
 				try {
                     if(rc.isActive()) {
                         // on the first pass
                         if (first) {
+                        	
                             first = false;
                             // broadcast this out first and then check for -1 instead of 0, becuase if the map location
                             // is at (0, 0), then we will never make it out of the loop
@@ -112,6 +112,7 @@ public class RobotPlayer {
 							int n = RobotUtil.getNewGoalPastr(rc, oldOffset, OffenseGoalLocations);
 							if(n != -1){
 								rc.broadcast(OffenseCurrentGoalOffset, n);
+								rc.broadcast(noNewPastrToAttack, 0);
 							}
 						}
 
@@ -126,6 +127,7 @@ public class RobotPlayer {
 									break;
 								}
 							}
+							System.out.println("working");
 							//Pathing Algorithm
 	                        map = RobotUtil.assessMapWithDirection(rc, ourPASTR, map);
 	                        RobotUtil.logMap(map);
@@ -197,10 +199,11 @@ public class RobotPlayer {
 										System.out.println("Retrieved " + goal);
 										robotMission = missions.offense;
 										rc.broadcast(sendToAttack, rc.readBroadcast(sendToAttack) - 1);
+										/*
 										if(rc.readBroadcast(groupLeaderPicked) == 1){
 											leaderOfGroup = true;
 											rc.broadcast(groupLeaderPicked, 0);
-										}
+										}*/
 									}else{
 									    //if a pastr and noisetower havent been made/assigned to a bot
 										if(rc.readBroadcast(buildingProgress) < 2){
@@ -234,12 +237,20 @@ public class RobotPlayer {
 										}
 									}
 									*/
+									goal = RobotUtil.intToMapLoc(rc.readBroadcast(rc.readBroadcast(OffenseCurrentGoalOffset)));
+									
+									if(rc.readBroadcast(noNewPastrToAttack) == 1){
+										int intToGoal = rc.readBroadcast(RobotUtil.mapLocToInt(new MapLocation(currentLocation.x,currentLocation.y)) + DefenseChannelOffset) - 1;
+										Direction dirToGoal = directions[intToGoal];
+										RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
+									}
 									//if the goal pastr is gone tell the hq and go back to our pastr
 									if(rc.canSenseSquare(goal)){
 										if(rc.senseObjectAtLocation(goal) == null){
 											rc.broadcast(rc.readBroadcast(OffenseCurrentGoalOffset), -1);
 											rc.broadcast(OffenseGoalDestroyed, 1);
 											goal = RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation));
+											rc.broadcast(noNewPastrToAttack, 1);
 											//robotMission = missions.defense;
 										}
 									}
