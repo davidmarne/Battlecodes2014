@@ -83,10 +83,13 @@ public class RobotUtil {
 							}else{//else if there is an enemy attackable do so, or else move towards group attack spot
 								boolean flag = false;
 								for(Robot r: enemiesNear){
+									
 									MapLocation temp = rc.senseLocationOf(r);
 									if(rc.canAttackSquare(temp)){
-										rc.attackSquare(temp);
-										flag = true;
+										if(rc.senseRobotInfo(r).type != RobotType.HQ){
+											rc.attackSquare(temp);
+											flag = true;
+										}
 									}
 								}
 								if(!flag){
@@ -100,8 +103,10 @@ public class RobotUtil {
 							for(Robot r: enemiesNear){
 								MapLocation temp = rc.senseLocationOf(r);
 								if(rc.canAttackSquare(temp)){
-									rc.attackSquare(temp);
-									result = true;
+									if(rc.senseRobotInfo(r).type != RobotType.HQ){
+										rc.attackSquare(temp);
+										result = true;
+									}
 								}
 							}
 						}
@@ -110,8 +115,10 @@ public class RobotUtil {
 						for(Robot r: enemiesNear){
 							MapLocation temp = rc.senseLocationOf(r);
 							if(rc.canAttackSquare(temp)){
-								rc.attackSquare(temp);
-								flag = true;
+								if(rc.senseRobotInfo(r).type != RobotType.HQ){
+									rc.attackSquare(temp);
+									result = true;
+								}
 							}
 						}
 						if(!flag){
@@ -123,10 +130,12 @@ public class RobotUtil {
 					for(Robot r: enemiesNear){
 						MapLocation attackSpot = rc.senseLocationOf(r);
 						if(rc.canAttackSquare(attackSpot)){
-							rc.attackSquare(attackSpot);
-							rc.broadcast(groupAttackLocation[groupNum], mapLocToInt(attackSpot));
-							System.out.println("Group " + groupNum + " is attacking " + attackSpot);
-							result = true;
+							if(rc.senseRobotInfo(r).type != RobotType.HQ){
+								rc.attackSquare(attackSpot);
+								result = true;
+								rc.broadcast(groupAttackLocation[groupNum], mapLocToInt(attackSpot));
+								System.out.println("Group " + groupNum + " is attacking " + attackSpot);
+							}
 						}
 					}
 				}

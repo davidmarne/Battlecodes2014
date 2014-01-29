@@ -4,6 +4,8 @@ import battlecode.common.*;
 
 import java.util.Random;
 
+import team071.RobotUtil;
+
 public class RobotPlayer {
 	static Random rand;
 	public static enum missions{
@@ -20,7 +22,7 @@ public class RobotPlayer {
 	static int startGroup = 11;
 	static int startGroupGO = 12;
 	static int sendToAttack = 13;
-	static int towerLocation = 14;
+	static int pastrLocation = 14;
 	static int[] groupAttackLocation = {15,16,17,18,19};
 	static int[] numberInjuredInGroup = {22,23,24,25,26}; 
 	static int groupLeaderPicked = 21;
@@ -55,6 +57,7 @@ public class RobotPlayer {
                             // is at (0, 0), then we will never make it out of the loop
                             rc.broadcast(DefenseGoalLocation, -1);
                             rc.broadcast(OffenseCurrentGoalOffset, -1);
+                            rc.broadcast(pastrLocation, -1);
                             //group attack locations must also be init'ed -1 so they 0,0 can be a location
                             for(int i : groupAttackLocation){
                                 rc.broadcast(i, -1);
@@ -207,19 +210,18 @@ public class RobotPlayer {
 										}*/
 									}else{
 									    //if a pastr and noisetower havent been made/assigned to a bot
-										if(rc.readBroadcast(buildingProgress) < 2){
+										if(rc.readBroadcast(buildingProgress) < 1){
 											if(currentLocation.equals(goal)){
 												rc.construct(RobotType.NOISETOWER);
-												rc.broadcast(towerLocation, RobotUtil.mapLocToInt(currentLocation));
 												rc.broadcast(buildingProgress, 1);
-											}else if(rc.readBroadcast(buildingProgress) == 1 && currentLocation.distanceSquaredTo(goal) < 4){
-												rc.construct(RobotType.PASTR);
-												rc.broadcast(buildingProgress, 2);
 											}
 										}else{//if the old pastr or tower has been destroyed 
-											if(currentLocation.equals(goal)){
+											if((currentLocation.equals(RobotUtil.intToMapLoc(rc.readBroadcast(pastrLocation))) || rc.readBroadcast(pastrLocation) == -1 && currentLocation.distanceSquaredTo(goal) < 1.5)){
 												rc.construct(RobotType.PASTR);
-											}else if(currentLocation.equals(RobotUtil.intToMapLoc(rc.readBroadcast(towerLocation)))){
+												if(rc.readBroadcast(pastrLocation) == -1){
+													rc.broadcast(pastrLocation, RobotUtil.mapLocToInt(currentLocation));
+												}
+											}else if(currentLocation.equals(goal)){
 												rc.construct(RobotType.NOISETOWER);
 											}
 										}
