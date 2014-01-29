@@ -31,6 +31,7 @@ public class RobotPlayer {
 	static int offenseInitialized = 29;
 	static int noNewPastrToAttack = 30;
 	static int pastrNeedsReinforcements = 31;
+	static int mapBeingAssessed = 32;
 	//every robotID + 50 is the robots healing boolean
 	
 	public static void run(RobotController rc) {
@@ -127,13 +128,15 @@ public class RobotPlayer {
 									break;
 								}
 							}
+							rc.broadcast(DefenseGoalLocation, RobotUtil.mapLocToInt(ourPASTR));
+							rc.broadcast(mapBeingAssessed, 1);
 							//Pathing Algorithm
 	                        map = RobotUtil.assessMapWithDirection(rc, ourPASTR, map);
 	                        RobotUtil.logMap(map);
 	                        //broadcast the map out for other robots to read
 	                        RobotUtil.broadcastMap(rc, map, DefenseChannelOffset);
 	                        //let everyone know the goal location
-	                        rc.broadcast(DefenseGoalLocation, RobotUtil.mapLocToInt(ourPASTR));
+	                        rc.broadcast(mapBeingAssessed, 0);
 						}else{
 							//if a new map can be computed do so
 							for(int channel: OffenseGoalLocations){
@@ -159,6 +162,7 @@ public class RobotPlayer {
 						if(first || second){
 							//get map to our pastr if possible
 							if((rc.readBroadcast(offenseInitialized) == 0 || rc.readBroadcast(OffenseGoalDestroyed) == 1) && first){
+								
 								if(rc.readBroadcast(DefenseGoalLocation) >= 0 ){
 									//all bots go to our pastr to rally
 									goal = RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation));
@@ -178,7 +182,7 @@ public class RobotPlayer {
 								
 							}
 						}else{
-							int startBC = Clock.getBytecodeNum();
+							//int startBC = Clock.getBytecodeNum();
 							boolean result;
 							if(robotMission == missions.defense){
 								result = RobotUtil.micro(rc, 0);
@@ -190,6 +194,7 @@ public class RobotPlayer {
 							
 							if(!result){
 								if(robotMission == missions.defense){/*
+								
 									if(rc.readBroadcast(reinforcementsSent) > 0){
 										goal = RobotUtil.intToMapLoc(rc.readBroadcast(rc.readBroadcast(OffenseCurrentGoalOffset)));
 										System.out.println("Retrieved " + goal);
@@ -198,6 +203,7 @@ public class RobotPlayer {
 										
 									}else*/ 
 									//startBC = Clock.getBytecodeNum();
+									
 									if(rc.readBroadcast(sendToAttack) > 0){
 										goal = RobotUtil.intToMapLoc(rc.readBroadcast(rc.readBroadcast(OffenseCurrentGoalOffset)));
 										System.out.println("Retrieved " + goal);
@@ -225,10 +231,13 @@ public class RobotPlayer {
 												rc.construct(RobotType.NOISETOWER);
 											}
 										}
-										//move towards goal
-										int intToGoal = rc.readBroadcast(RobotUtil.mapLocToInt(new MapLocation(currentLocation.x,currentLocation.y)) + DefenseChannelOffset) - 1;
-										Direction dirToGoal = directions[intToGoal];
-										RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
+										if(rc.readBroadcast(mapBeingAssessed) == 1){
+											RobotUtil.moveInDirection(rc, RobotUtil.bugPathNextSquare(rc, rc.getLocation(), goal), "sneak");
+										}else{
+											int intToGoal = rc.readBroadcast(RobotUtil.mapLocToInt(new MapLocation(currentLocation.x,currentLocation.y)) + DefenseChannelOffset) - 1;
+											Direction dirToGoal = directions[intToGoal];
+											RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
+										}
 									}
 									//System.out.println("Defense ByteCodes: " + (Clock.getBytecodeNum() - startBC));
 								}else{
@@ -269,7 +278,7 @@ public class RobotPlayer {
 									//System.out.println("Offense ByteCodes: " + (Clock.getBytecodeNum() - startBC));
 								}
 							}
-							System.out.println("MICRO BYTECODES: " + (Clock.getBytecodeNum() - startBC));
+							//System.out.println("MICRO BYTECODES: " + (Clock.getBytecodeNum() - startBC));
 						}
 					}
 				} catch (Exception e) {

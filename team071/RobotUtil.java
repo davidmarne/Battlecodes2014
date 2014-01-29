@@ -285,6 +285,12 @@ public class RobotUtil {
         // and the distance values / direction in the graph __|_
         while(!queue.isEmpty()) {
             intelligentSpawn(rc, rc.getLocation().directionTo(goal));
+          //if there are 5 new spawnees at the hq send em out
+			if(rc.readBroadcast(startGroup) > 1){
+				rc.broadcast(startGroupGO, 1);
+			}else{
+				rc.broadcast(startGroupGO, 0);
+			}
             currentLocation = queue.poll();
             currentX = currentLocation.x;
             currentY = currentLocation.y;
@@ -439,7 +445,7 @@ public class RobotUtil {
             MapLocation temp = currentLocation.add(currentLocation.directionTo(destination));
             terrain = rc.senseTerrainTile(temp).ordinal();
             // if we ever get closer to our destination, and the square towards is open, leave wall
-            if (currentDistance >= shortestDistance && terrain != 2 && terrain != 3) {
+            if (currentDistance <= shortestDistance && terrain != 2 && terrain != 3) {
                 onWall = false;
                 bugPathNextSquare(rc, currentLocation, destination);
             }

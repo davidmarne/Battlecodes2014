@@ -6,6 +6,8 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Random;
 
+import oneTeamBot.RobotUtil;
+
 public class RobotUtil {
 	static int DefenseChannelOffset = 10000;
 	static int DefenseGoalLocation = 64999;
@@ -28,7 +30,7 @@ public class RobotUtil {
         defense, offense;
     }
     
-    public static boolean micro(RobotController rc, int groupNum) throws GameActionException{
+public static boolean micro(RobotController rc, int groupNum) throws GameActionException{
     	
     	boolean result = false;
     	Robot[] enemiesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam().opponent());
@@ -83,10 +85,13 @@ public class RobotUtil {
 							}else{//else if there is an enemy attackable do so, or else move towards group attack spot
 								boolean flag = false;
 								for(Robot r: enemiesNear){
+									
 									MapLocation temp = rc.senseLocationOf(r);
 									if(rc.canAttackSquare(temp)){
-										rc.attackSquare(temp);
-										flag = true;
+										if(rc.senseRobotInfo(r).type != RobotType.HQ){
+											rc.attackSquare(temp);
+											flag = true;
+										}
 									}
 								}
 								if(!flag){
@@ -100,8 +105,10 @@ public class RobotUtil {
 							for(Robot r: enemiesNear){
 								MapLocation temp = rc.senseLocationOf(r);
 								if(rc.canAttackSquare(temp)){
-									rc.attackSquare(temp);
-									result = true;
+									if(rc.senseRobotInfo(r).type != RobotType.HQ){
+										rc.attackSquare(temp);
+										result = true;
+									}
 								}
 							}
 						}
@@ -110,8 +117,10 @@ public class RobotUtil {
 						for(Robot r: enemiesNear){
 							MapLocation temp = rc.senseLocationOf(r);
 							if(rc.canAttackSquare(temp)){
-								rc.attackSquare(temp);
-								flag = true;
+								if(rc.senseRobotInfo(r).type != RobotType.HQ){
+									rc.attackSquare(temp);
+									result = true;
+								}
 							}
 						}
 						if(!flag){
@@ -123,10 +132,12 @@ public class RobotUtil {
 					for(Robot r: enemiesNear){
 						MapLocation attackSpot = rc.senseLocationOf(r);
 						if(rc.canAttackSquare(attackSpot)){
-							rc.attackSquare(attackSpot);
-							rc.broadcast(groupAttackLocation[groupNum], mapLocToInt(attackSpot));
-							System.out.println("Group " + groupNum + " is attacking " + attackSpot);
-							result = true;
+							if(rc.senseRobotInfo(r).type != RobotType.HQ){
+								rc.attackSquare(attackSpot);
+								result = true;
+								rc.broadcast(groupAttackLocation[groupNum], mapLocToInt(attackSpot));
+								System.out.println("Group " + groupNum + " is attacking " + attackSpot);
+							}
 						}
 					}
 				}
@@ -276,6 +287,11 @@ public class RobotUtil {
         // and the distance values / direction in the graph __|_
         while(!queue.isEmpty()) {
             intelligentSpawn(rc, rc.getLocation().directionTo(goal));
+            if(rc.readBroadcast(startGroup) > 1){
+				rc.broadcast(startGroupGO, 1);
+			}else{
+				rc.broadcast(startGroupGO, 0);
+			}
             currentLocation = queue.poll();
             currentX = currentLocation.x;
             currentY = currentLocation.y;
@@ -430,7 +446,7 @@ public class RobotUtil {
             MapLocation temp = currentLocation.add(currentLocation.directionTo(destination));
             terrain = rc.senseTerrainTile(temp).ordinal();
             // if we ever get closer to our destination, and the square towards is open, leave wall
-            if (currentDistance >= shortestDistance && terrain != 2 && terrain != 3) {
+            if (currentDistance <= shortestDistance && terrain != 2 && terrain != 3) {
                 onWall = false;
                 bugPathNextSquare(rc, currentLocation, destination);
             }
