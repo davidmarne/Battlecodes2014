@@ -67,7 +67,7 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
 					MapLocation avg = new MapLocation(counterx / enemiesNear.length, countery / enemiesNear.length);
 		
 					Direction dirToGoal = rc.getLocation().directionTo(avg).opposite();
-					RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
+					RobotUtil.moveInDirection(rc, dirToGoal);
 				}
 				result = true;
 			}
@@ -95,7 +95,7 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
 									}
 								}
 								if(!flag){
-									moveInDirection(rc, bugPathNextSquare(rc, rc.getLocation(), groupAttackSpot), "move");
+									moveInDirection(rc, bugPathNextSquare(rc, rc.getLocation(), groupAttackSpot));
 									result = true;
 								}
 							}
@@ -124,7 +124,7 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
 							}
 						}
 						if(!flag){
-							moveInDirection(rc, bugPathNextSquare(rc, rc.getLocation(), groupAttackSpot), "move");
+							moveInDirection(rc, bugPathNextSquare(rc, rc.getLocation(), groupAttackSpot));
 							result = true;
 						}
 					}
@@ -155,7 +155,7 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
 					}
 					MapLocation avg = new MapLocation(counterx / enemiesNear.length, countery / enemiesNear.length);
 					Direction dirToGoal = rc.getLocation().directionTo(avg).opposite();
-					RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
+					RobotUtil.moveInDirection(rc, dirToGoal);
 				}
 				result = true;
 			}
@@ -211,13 +211,13 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
         }
     }
 
-    public static void moveInDirection(RobotController rc, Direction goalDirection, String type) throws GameActionException {
+    public static void moveInDirection(RobotController rc, Direction goalDirection) throws GameActionException {
         int[] directionPriority = {0, 1, -1, 2, -2, 3, -3, 4};
         if(rc.isActive()){
             for(int direction:directionPriority){
                 int trialDir = (goalDirection.ordinal() + direction + 8) % 8;
                 if(rc.canMove(allDirections[trialDir])){
-                    if(type.equals("sneak")) {
+                    if(rc.getLocation().distanceSquaredTo(intToMapLoc(rc.readBroadcast(DefenseGoalLocation))) < 50){
                         rc.sneak(allDirections[trialDir]);
                     } else {
                         rc.move(allDirections[trialDir]);
@@ -226,29 +226,6 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
                 }
             }
         }
-    }
-    public static int[][] assessMap(RobotController rc, int[][] map) {
-        int mapWidth = rc.getMapWidth();
-        int ogMapWidth = mapWidth;
-        int mapHeight = rc.getMapHeight();
-        for (int i = 0; i < mapHeight + 2; i++) {
-            for (int j = 0; j < mapWidth + 2; j++) {
-                int tile;
-                if(i == 0 || j == 0 || i == ogMapWidth + 1 || j == mapHeight + 1) { // pad the map to easily find corners
-                    tile = 2;
-                    map[i][j] = tile;
-                    map[ogMapWidth + 1 - i][mapHeight + 1 - j] = tile;
-                } else {
-                    tile = rc.senseTerrainTile(new MapLocation(i - 1, j - 1)).ordinal();
-                    map[i][j] = tile;
-                    map[ogMapWidth + 1 - i][mapHeight + 1 - j] = tile;
-                }
-                map[i][j] = tile > 2 ? 2 : tile;
-                map[ogMapWidth + 1 - i][mapHeight + 1 - j] = tile > 2 ? 2 : tile;
-            }
-            mapWidth--;
-        }
-        return map;
     }
 
     public static int[][] assessMapWithDirection(RobotController rc, MapLocation goal, int[][] map) throws GameActionException {
@@ -344,92 +321,33 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
         return map;
     }
 
-    public static ArrayList<Direction> bugPath(MapLocation start, MapLocation destination, int[][] map) throws GameActionException {
-        
-        ArrayList<Direction> path = new ArrayList<Direction>();
-        MapLocation currentLocation = start;
-        MapLocation targetLocation;
-        int currentDistance = currentLocation.distanceSquaredTo(destination);
-        int shortestDistance = currentDistance;
-        System.out.println("Start loc: (" + start.x + ", " + start.y + ")");
-        System.out.println("Destination loc: (" + destination.x + ", " + destination.y + ")");
-        int roundNum = Clock.getRoundNum();;
-        while(true) {
-            if (Clock.getRoundNum() - roundNum > 100) {return path;}
-            // we are at out destination
-            if(currentLocation.x == destination.x && currentLocation.y == destination.y) {
-                break;
-            }
-            Direction dir = currentLocation.directionTo(destination);
-            targetLocation = currentLocation.add(dir);
-//            System.out.println("VAL: " + map[targetLocation.x][targetLocation.y] + "TargetLoc: " + targetLocation);
-            // if we can move in the direction of the destination
-            if(map[targetLocation.x+1][targetLocation.y+1] != 2 && map[targetLocation.x+1][targetLocation.y+1] != 3) {
-                path.add(dir);
-//                System.out.println("1: " + currentLocation + " -> " + dir + " -> " + targetLocation);
-                currentLocation = targetLocation;
-                currentDistance = currentLocation.distanceSquaredTo(destination);
-                shortestDistance = currentDistance;
-
-            // we can not move towards the destination because there is a wall
-            } else {
-                // location to the destination should not be a wall
-                MapLocation temp = currentLocation.add(currentLocation.directionTo(destination));
-                // we are not closer and the direction towards the destination is a wall
-                while(currentDistance >= shortestDistance || (map[temp.x+1][temp.y+1] == 2 || map[temp.x+1][temp.y+1] == 3)) {
-                    if (Clock.getRoundNum() - roundNum > 100) {return path;}
-                    // while the targetLocation is a wall, rotate and update to new target location
-                    // this deals with if we need to rotate left
-                    int flag = 0;
-                    while (map[targetLocation.x+1][targetLocation.y+1] == 2 || map[targetLocation.x+1][targetLocation.y+1] == 3) {
-                        if (Clock.getRoundNum() - roundNum > 100) {return path;}
-                        flag += 1;
-                        dir = dir.rotateLeft();
-//                        System.out.println("Rotate Left, DIR is now: " + dir);
-                        targetLocation = currentLocation.add(dir);
-                    }
-                    // if the wall on our right disappears
-                    // this deals with if we need to rotate right
-                    MapLocation wallLocation = currentLocation.add(dir.rotateRight().rotateRight());
-                    if (flag == 1) {
-                        path.add(dir);
-                        currentLocation = targetLocation;
-                        currentDistance = currentLocation.distanceSquaredTo(destination);
-                        break;
-                    }
-                    if(map[wallLocation.x+1][wallLocation.y+1] != 2 && map[wallLocation.x+1][wallLocation.y+1] != 3) {
-                        dir = dir.rotateRight().rotateRight();
-//                        System.out.println("Rotate Right x2, DIR is now: " + dir);
-                        targetLocation = currentLocation.add(dir);
-                    } else {
-                        targetLocation = currentLocation.add(dir);
-                    }
-                    path.add(dir);
-//                    System.out.println("2: " + currentLocation + " -> " + dir + " -> " + targetLocation);
-                    currentLocation = targetLocation;
-                    targetLocation = currentLocation.add(dir);
-                    currentDistance = currentLocation.distanceSquaredTo(destination);
-                    temp = currentLocation.add(currentLocation.directionTo(destination));
-                }
-            }
-        }
-        return path;
-    }
-
     private static int shortestDistance;
-    private static boolean onWall;
+    private static boolean onWall = false;
+    private static Direction currentDirection = null;
 
     /**
      * Method assess the bots current location and returns the next direction according to our bug path, or null
      */
     public static Direction bugPathNextSquare(RobotController rc, MapLocation currentLocation, MapLocation destination) throws GameActionException {
+        if (currentDirection == null) {
+            currentDirection = rc.getLocation().directionTo(destination);
+            shortestDistance = rc.getLocation().distanceSquaredTo(destination);
+        }
+
         int terrain;
         MapLocation targetLocation;
         int currentDistance = currentLocation.distanceSquaredTo(destination);
-        System.out.println("Destination loc: (" + destination.x + ", " + destination.y + ")");
-
+        if(rc.getRobot().getID() == 105){
+            System.out.println("1 " + shortestDistance + ", currentDistance:" + currentDistance);
+        }
+        rc.setIndicatorString(2, "onWall: " + onWall);
+        rc.setIndicatorString(1, destination.toString());
         // we are at out destination
         if(currentLocation.x == destination.x && currentLocation.y == destination.y) {
+            if(rc.getRobot().getID() == 105){
+                System.out.println("2 " + shortestDistance + ", currentDistance:" + currentDistance);
+            }
+            rc.setIndicatorString(0, "null");
             return null;
         }
         Direction dir = currentLocation.directionTo(destination);
@@ -438,22 +356,32 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
 
         // if we can move in the direction of the destination
         if(!onWall && terrain != 2 && terrain != 3) {
+            if(rc.getRobot().getID() == 105){
+                System.out.println("3 " + shortestDistance + ", currentDistance:" + currentDistance);
+            }
             shortestDistance = currentDistance;
+            rc.setIndicatorString(0, dir.toString());
+            currentDirection = dir;
             return dir;
         // we can not move towards the destination because there is a wall
         } else {
             onWall = true;
-            MapLocation temp = currentLocation.add(currentLocation.directionTo(destination));
-            terrain = rc.senseTerrainTile(temp).ordinal();
             // if we ever get closer to our destination, and the square towards is open, leave wall
             if (currentDistance <= shortestDistance && terrain != 2 && terrain != 3) {
+                if(rc.getRobot().getID() == 105){
+                    System.out.println("4 " + shortestDistance + ", currentDistance:" + currentDistance);
+                }
                 onWall = false;
-                bugPathNextSquare(rc, currentLocation, destination);
+                rc.setIndicatorString(0, dir.toString());
+                currentDirection = dir;
+                return dir;
             }
 
+            dir = currentDirection;
             // while the targetLocation is a wall, rotate and update to new target location
             // this deals with if we need to rotate left
             int counter = 0;
+            targetLocation = rc.getLocation().add(currentDirection);
             terrain = rc.senseTerrainTile(targetLocation).ordinal();
             while (terrain == 2 || terrain == 3) {
                 counter += 1;
@@ -461,7 +389,15 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
                 targetLocation = currentLocation.add(dir);
                 terrain = rc.senseTerrainTile(targetLocation).ordinal();
             }
+            if(rc.getRobot().getID() == 105){
+                System.out.println(counter);
+            }
             if (counter > 0) {
+                if(rc.getRobot().getID() == 105){
+                    System.out.println("5 " + shortestDistance + ", currentDistance:" + currentDistance);
+                }
+                rc.setIndicatorString(0, dir.toString());
+                currentDirection = dir;
                 return dir;
             }
             // if the wall on our right disappears
@@ -469,68 +405,22 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
             MapLocation wallLocation = currentLocation.add(dir.rotateRight().rotateRight());
             terrain = rc.senseTerrainTile(wallLocation).ordinal();
             if(terrain != 2 && terrain != 3) {
+                if(rc.getRobot().getID() == 105){
+                    System.out.println("6 " + shortestDistance + ", currentDistance:" + currentDistance);
+                }
                 dir = dir.rotateRight().rotateRight();
+                rc.setIndicatorString(0, dir.toString());
+                currentDirection = dir;
                 return dir;
             } else {
+                if(rc.getRobot().getID() == 105){
+                    System.out.println("7 " + shortestDistance + ", currentDistance:" + currentDistance);
+                }
+                rc.setIndicatorString(0, dir.toString());
+                currentDirection = dir;
                 return dir;
             }
         }
-    }
-    
-    public static MapLocation sensePASTRGoal(RobotController rc){
-    	double[][] growthMap = rc.senseCowGrowth();
-    	int mapSize = growthMap.length;
-    	double[] colGrowth = new double[mapSize];
-    	double[] rowGrowth = new double[mapSize];
-    	
-    	for(int i = 0; i < mapSize; i++){
-    		double colVal = 0.0;
-    		double rowVal = 0.0;
-    		for(int j = 0; j < mapSize; j++){
-    			colVal += growthMap[i][j];
-    			rowVal += growthMap[j][i];
-    			//System.out.print(growthMap[j][i] + " ");
-    		}
-    		//System.out.println();
-    		colGrowth[i] = colVal;
-    		rowGrowth[i] = rowVal;
-    	}
-    	
-    	double maxGrowth = 0.0;
-    	int growthXLoc = 0;
-    	int growthYLoc = 0;
-    	for(int i = 0; i < rowGrowth.length; i++){
-    		for(int j = 0; j < colGrowth.length; j++){
-    			if((colGrowth[i] + rowGrowth[j]) > maxGrowth && rc.senseTerrainTile(new MapLocation(i,j)).ordinal() != 2){
-    				maxGrowth = rowGrowth[i] + colGrowth[j];
-    				//System.out.println(maxGrowth);
-    				growthXLoc = i;
-    				growthYLoc = j;	
-    			}
-    		}
-    	}
-    	return new MapLocation(growthXLoc,growthYLoc);
-    }
-    
-    public static MapLocation sensePASTRGoal2(RobotController rc){
-    	double[][] growthMap = rc.senseCowGrowth();
-    	double counter = 0.0;
-    	double counterx = 0.0;
-    	double countery = 0.0;
-    	
-    	for(int i = 0; i < growthMap.length; i++){
-    		for(int j = 0; j < growthMap[0].length - i; j++){
-    			double growth = growthMap[i][j];
-    			if(growth > 0){
-    				counter+=growth;
-    				counterx += (i*growth);
-    				countery += (j*growth);
-    			}
-    		}
-    	}
-    	if((int)(counterx/counter) == 0 && (int)(countery/counter) == 0 ){
-    		return new MapLocation(1,1);
-    	}else return new MapLocation((int)(counterx/counter), (int)(countery/counter));
     }
     
     public static MapLocation sensePASTRGoal3(RobotController rc, int mapWidth, int mapHeight){
@@ -593,18 +483,7 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
     		}
     	}
     }
-    
-    public static int[][] readMapFromBroadcast(RobotController rc, int offset) throws GameActionException{
-    	int mapWidth = rc.getMapWidth();
-    	int mapHeight = rc.getMapHeight();
-    	int[][] map = new int[mapWidth][mapHeight];
-    	for(int i = 0; i < mapWidth; i++){
-    		for(int j = 0; j < mapHeight; j++){
-    			map[i][j] = rc.readBroadcast(offset + mapLocToInt(new MapLocation(i,j)));
-    		}
-    	}
-    	return map;
-    }
+
     public static MapLocation getPastrToMakeGoal(RobotController rc, int[] channels, MapLocation ourPASTR) throws GameActionException{
     	MapLocation[] pastrLocs = rc.sensePastrLocations(rc.getTeam().opponent());
 
@@ -654,30 +533,5 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
     	} else {
             return -1;
         }
-    }
-    
-    public static void movingBugPath(RobotController rc, MapLocation goal) throws GameActionException{
-    	MapLocation currentLocation = rc.getLocation();
-    	if(currentLocation.equals(goal)){
-    		
-    	}else{
-    		if(rc.readBroadcast(1) == 0){
-    			Direction dir = currentLocation.directionTo(goal);
-    			if(rc.canMove(dir)){
-    				moveInDirection(rc, dir, "move");
-    			}else{
-    				while(true){
-    					if((rc.senseTerrainTile(currentLocation.add(allDirections[dir.ordinal() + 2])).ordinal() == 2 || rc.senseTerrainTile(currentLocation.add(allDirections[dir.ordinal() + 2])).ordinal() == 3) && (rc.senseTerrainTile(currentLocation.add(dir)).ordinal() != 2 && rc.senseTerrainTile(currentLocation.add(dir)).ordinal() == 3)){
-    						moveInDirection(rc, dir, "move");
-    						//rc.broadcast(ToBeat)
-    						break;
-    					}else dir = dir.rotateLeft();
-    					
-    				}
-    			}
-    		}else{
-    			
-    		}
-    	}
     }
 }

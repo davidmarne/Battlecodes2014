@@ -178,7 +178,7 @@ public class RobotPlayer {
 								rc.broadcast(startGroup, rc.readBroadcast(startGroup) - 1);
 								second = false;
 							}else{
-								
+								// move away from hq initially
 							}
 						}else{
 							//int startBC = Clock.getBytecodeNum();
@@ -230,11 +230,11 @@ public class RobotPlayer {
 										}
 										//move towards goal
 										if(rc.readBroadcast(mapBeingAssessed) == 1){
-											RobotUtil.moveInDirection(rc, RobotUtil.bugPathNextSquare(rc, rc.getLocation(), goal), "sneak");
+											RobotUtil.moveInDirection(rc, RobotUtil.bugPathNextSquare(rc, rc.getLocation(), goal));
 										}else{
 											int intToGoal = rc.readBroadcast(RobotUtil.mapLocToInt(new MapLocation(currentLocation.x,currentLocation.y)) + DefenseChannelOffset) - 1;
 											Direction dirToGoal = directions[intToGoal];
-											RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
+											RobotUtil.moveInDirection(rc, dirToGoal);
 										}
 									}
 									//System.out.println("Defense ByteCodes: " + (Clock.getBytecodeNum() - startBC));
@@ -255,7 +255,7 @@ public class RobotPlayer {
 									}else if(rc.readBroadcast(noNewPastrToAttack) == 1){
 										int intToGoal = rc.readBroadcast(RobotUtil.mapLocToInt(new MapLocation(currentLocation.x,currentLocation.y)) + DefenseChannelOffset) - 1;
 										Direction dirToGoal = directions[intToGoal];
-										RobotUtil.moveInDirection(rc, dirToGoal, "sneak");
+										RobotUtil.moveInDirection(rc, dirToGoal);
 									}else{
 										//if the goal pastr is gone tell the hq and go back to our pastr
 										goal = RobotUtil.intToMapLoc(rc.readBroadcast(rc.readBroadcast(OffenseCurrentGoalOffset)));
@@ -271,7 +271,7 @@ public class RobotPlayer {
 										//move towards goal
 										int intToGoal = rc.readBroadcast(RobotUtil.mapLocToInt(new MapLocation(currentLocation.x,currentLocation.y)) + (rc.readBroadcast(OffenseCurrentGoalOffset)*10000)) - 1;
 										Direction dirToGoal = directions[intToGoal];
-										RobotUtil.moveInDirection(rc, dirToGoal, "move");
+										RobotUtil.moveInDirection(rc, dirToGoal);
 									}
 									//System.out.println("Offense ByteCodes: " + (Clock.getBytecodeNum() - startBC));
 								}
