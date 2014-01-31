@@ -479,7 +479,7 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
         boolean newPASTRLocation;
         // loop through all enemy PASTRS - we need to find the one closest to our PASTR
     	for(MapLocation pastr: pastrLocs){
-    		if(pastr.distanceSquaredTo(rc.senseEnemyHQLocation()) > 40){
+    		//if(pastr.distanceSquaredTo(rc.senseEnemyHQLocation()) > 40){
     			newPASTRLocation = true;
 	            // loop through all channels
 	    		for(int channel: channels){
@@ -494,7 +494,7 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
 	                    smallestDistance = pastr.distanceSquaredTo(ourPASTR);
 	                }
 	    		}
-    		}
+    		//}
     	}
     	return closestPASTR;
     }
