@@ -34,7 +34,6 @@ public class RobotPlayer {
 	static int mapBeingAssessed = 32;
 	static int totalHealthOfInjured = 33;
 	static int InjuredAttack = 34;
-	static int firstRobot = 35;
 	//every robotID + 50 is the robots healing boolean
 	
 	public static void run(RobotController rc) {
@@ -54,9 +53,6 @@ public class RobotPlayer {
         while(true) {
 			if (rc.getType() == RobotType.HQ) {
 				try {
-					
-					rc.broadcast(firstRobot, 0);
-                    
 					if(rc.isActive()) {
                         // on the first pass
                         if (first) {
@@ -247,20 +243,8 @@ public class RobotPlayer {
 											RobotUtil.moveInDirection(rc, dirToGoal);
 										}
 									}
-									//System.out.println("Defense ByteCodes: " + (Clock.getBytecodeNum() - startBC));
 								}else{
-									//if many are injured in group ask for reinforcements
-									/*
-									if(leaderOfGroup){
-										if(rc.readBroadcast(numberInjuredInGroup[1]) > 4){
-											rc.broadcast(reinforcementsNeeded, 1);
-										}
-									}
-									*/
-									//startBC = Clock.getBytecodeNum();
-									
-									
-									
+
 									if(rc.readBroadcast(pastrNeedsReinforcements) > 0){
 										robotMission = missions.defense;
 										goal = RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation));
@@ -289,7 +273,15 @@ public class RobotPlayer {
 									//System.out.println("Offense ByteCodes: " + (Clock.getBytecodeNum() - startBC));
 								}
 							}
-							//System.out.println("MICRO BYTECODES: " + (Clock.getBytecodeNum() - startBC));
+
+                            if(currentLocation.equals(RobotUtil.intToMapLoc(rc.readBroadcast(pastrLocation))) || (rc.readBroadcast(pastrLocation) == -1 && currentLocation.distanceSquaredTo(goal) < 1.5)){
+                                rc.construct(RobotType.PASTR);
+                                if(rc.readBroadcast(pastrLocation) == -1){
+                                    rc.broadcast(pastrLocation, RobotUtil.mapLocToInt(currentLocation));
+                                }
+                            } else if(currentLocation.equals(goal)){
+                                rc.construct(RobotType.NOISETOWER);
+                            }
 						}
 					}
 				} catch (Exception e) {
@@ -324,8 +316,12 @@ public class RobotPlayer {
                 }
             }else if(rc.getType() == RobotType.PASTR){
             	try{
+                    rc.broadcast(InjuredAttack, 0);
             		Robot[] teammatesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam());
-            		if(pastrHurt){
+                    if (teammatesNear.length > 5 && rc.readBroadcast(offenseInitialized) == 1) {
+                        rc.broadcast(InjuredAttack, 1);
+                }
+            		if (pastrHurt){
             			if(rc.getHealth() > 90){
             				pastrHurt = false;
             			}

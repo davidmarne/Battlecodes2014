@@ -32,41 +32,17 @@ public class RobotUtil {
     }
     static int InjuredAttack = 34;
     static boolean injured = false;
-    static int firstRobot = 35;
-     
+
 public static boolean micro(RobotController rc, int groupNum) throws GameActionException{
-    	
+
     	boolean result = false;
     	Robot[] enemiesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam().opponent());
-    	
-    	if(rc.readBroadcast(firstRobot) == 0){
-			if(rc.readBroadcast(numberInjuredInGroup[1]) > 0){
-				if(rc.readBroadcast(totalHealthOfInjured) / rc.readBroadcast(numberInjuredInGroup[1]) > 75){
-					rc.broadcast(InjuredAttack, 1);
-					System.out.println("1 numInjured: " + rc.readBroadcast(numberInjuredInGroup[1]) + " avgHealth: " + (rc.readBroadcast(totalHealthOfInjured) / rc.readBroadcast(numberInjuredInGroup[1])));
-				}else{
-					rc.broadcast(InjuredAttack, 0);
-					System.out.println("2 numInjured: " + rc.readBroadcast(numberInjuredInGroup[1]) + " avgHealth: " + (rc.readBroadcast(totalHealthOfInjured) / rc.readBroadcast(numberInjuredInGroup[1])));
-				}
-			}else{
-				rc.broadcast(InjuredAttack, 0);
-				System.out.println("3 numInjured: " + rc.readBroadcast(numberInjuredInGroup[1]) + " avgHealth: 0");
-			}
-			rc.broadcast(numberInjuredInGroup[1], 0);
-			rc.broadcast(totalHealthOfInjured, 0);
-			rc.broadcast(firstRobot, 1);
-		}
     	
 		//if more guys than just i die go for it
 		if(injured){//if injured
 			if(rc.readBroadcast(InjuredAttack) > 0){
 				injured = false;
-				rc.broadcast(numberInjuredInGroup[1], rc.readBroadcast(numberInjuredInGroup[1]) - 1);
 			}else{
-				int totalHealth = (int) (rc.readBroadcast(totalHealthOfInjured) + rc.getHealth());
-				//System.out.println("1 ADDING: " + rc.getHealth());
-				rc.broadcast(totalHealthOfInjured, totalHealth);
-				rc.broadcast(numberInjuredInGroup[1], rc.readBroadcast(numberInjuredInGroup[1]) + 1);
 				if(enemiesNear.length > 0){//run like a little girl
 					int counterx = 0;
 					int countery = 0;
@@ -78,8 +54,10 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
 					MapLocation avg = new MapLocation(counterx / enemiesNear.length, countery / enemiesNear.length);
 		
 					Direction dirToGoal = rc.getLocation().directionTo(avg).opposite();
-					RobotUtil.moveInDirection(rc, dirToGoal);
-				}
+					moveInDirection(rc, dirToGoal);
+				} else {
+                    moveInDirection(rc, allDirections[rc.readBroadcast(mapLocToInt(rc.getLocation()) + DefenseChannelOffset) - 1]);
+                }
 				result = true;
 			}
 		}else{//if were not injured and we have decent health then attack!
@@ -151,10 +129,6 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
 					}
 				}
 			}else{//RRRRRUUUUUUUUUUUUUNNNNNNNNNNNNNNNN
-				int totalHealth = (int) (rc.readBroadcast(totalHealthOfInjured) + rc.getHealth());
-				System.out.println("2 ADDING: " + rc.getHealth());
-				rc.broadcast(totalHealthOfInjured, totalHealth);
-				rc.broadcast(numberInjuredInGroup[1], rc.readBroadcast(numberInjuredInGroup[1]) + 1);
 				injured = true;
 					//compute opposite direction of direction towards average enemy position
 				if(enemiesNear.length > 0){
@@ -280,9 +254,7 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
 			}else{
 				rc.broadcast(startGroupGO, 0);
 			}
-            rc.broadcast(firstRobot, 0);
-            //System.out.println("broadcasting firstRobot");
-			
+
             currentLocation = queue.poll();
             currentX = currentLocation.x;
             currentY = currentLocation.y;

@@ -425,7 +425,7 @@ public class RobotUtil {
         int terrain;
         MapLocation targetLocation;
         int currentDistance = currentLocation.distanceSquaredTo(destination);
-        System.out.println("Destination loc: (" + destination.x + ", " + destination.y + ")");
+//        System.out.println("Destination loc: (" + destination.x + ", " + destination.y + ")");
 
         // we are at out destination
         if(currentLocation.x == destination.x && currentLocation.y == destination.y) {
