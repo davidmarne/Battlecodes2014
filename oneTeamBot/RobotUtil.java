@@ -40,6 +40,12 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
     	
 		//if more guys than just i die go for it
 		if(injured){//if injured
+			if(Clock.getRoundNum() % 50 == 0){
+	    		if(rc.getHealth() > 85){
+	    			injured = false;
+	    		}
+	    	}
+			
 			if(rc.readBroadcast(InjuredAttack) > 0){
 				injured = false;
 			}else{
@@ -61,7 +67,7 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
 				result = true;
 			}
 		}else{//if were not injured and we have decent health then attack!
-			if(rc.getHealth() > 30){
+			if(rc.getHealth() > 40){
 				if(rc.readBroadcast(groupAttackLocation[groupNum]) != -1){//if its group has a target
 					MapLocation groupAttackSpot = intToMapLoc(rc.readBroadcast(groupAttackLocation[groupNum]));
 					//if you can sense the spot, and theres still a robot attack, else tell everyone its gone and try and attack any other bots around
