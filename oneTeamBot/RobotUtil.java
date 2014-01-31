@@ -24,38 +24,49 @@ public class RobotUtil {
 	static int[] numberInjuredInGroup = {22,23,24,25,26}; 
 	static int groupUpdate = 20;
 	static int groupLeaderPicked = 21;
+	static int totalHealthOfInjured = 33;
     static Direction allDirections[] = Direction.values();
     static Random rand = new Random();
     public static enum missions{
         defense, offense;
     }
-    
+    static int InjuredAttack = 34;
+    static boolean injured = false;
+    static int firstRobot = 35;
+     
 public static boolean micro(RobotController rc, int groupNum) throws GameActionException{
     	
     	boolean result = false;
     	Robot[] enemiesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam().opponent());
-    	Robot[] teammatesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam());
-		int selfDestructCounter = 0;
-
-		for(Robot r: enemiesNear){
-			if(rc.getLocation().distanceSquaredTo(rc.senseLocationOf(r)) <= 2){
-				selfDestructCounter++;
-			}
-		}
-		for(Robot r: teammatesNear){
-			if(rc.getLocation().distanceSquaredTo(rc.senseLocationOf(r)) <= 2){
-				selfDestructCounter--;
-			}
-		}
-		//if more guys than just i die go for it
-		if(selfDestructCounter > 1){
-			System.out.println("BOOOOOOOOOOOOOOOOOOOOOOOOOOOM");
-			rc.selfDestruct();
-		}else if(rc.readBroadcast(rc.getRobot().getID() + 50) == 1){//if injured
-			if(rc.getHealth() > 60){
-				rc.broadcast(rc.getRobot().getID() + 50, 0);
-				rc.broadcast(numberInjuredInGroup[groupNum], rc.readBroadcast(numberInjuredInGroup[groupNum]) - 1);
+    	
+    	if(rc.readBroadcast(firstRobot) == 0){
+			if(rc.readBroadcast(numberInjuredInGroup[1]) > 0){
+				if(rc.readBroadcast(totalHealthOfInjured) / rc.readBroadcast(numberInjuredInGroup[1]) > 75){
+					rc.broadcast(InjuredAttack, 1);
+					System.out.println("1 numInjured: " + rc.readBroadcast(numberInjuredInGroup[1]) + " avgHealth: " + (rc.readBroadcast(totalHealthOfInjured) / rc.readBroadcast(numberInjuredInGroup[1])));
+				}else{
+					rc.broadcast(InjuredAttack, 0);
+					System.out.println("2 numInjured: " + rc.readBroadcast(numberInjuredInGroup[1]) + " avgHealth: " + (rc.readBroadcast(totalHealthOfInjured) / rc.readBroadcast(numberInjuredInGroup[1])));
+				}
 			}else{
+				rc.broadcast(InjuredAttack, 0);
+				System.out.println("3 numInjured: " + rc.readBroadcast(numberInjuredInGroup[1]) + " avgHealth: 0");
+			}
+			rc.broadcast(numberInjuredInGroup[1], 0);
+			rc.broadcast(totalHealthOfInjured, 0);
+			rc.broadcast(firstRobot, 1);
+		}
+    	
+		//if more guys than just i die go for it
+		if(injured){//if injured
+			if(rc.readBroadcast(InjuredAttack) > 0){
+				injured = false;
+				rc.broadcast(numberInjuredInGroup[1], rc.readBroadcast(numberInjuredInGroup[1]) - 1);
+			}else{
+				int totalHealth = (int) (rc.readBroadcast(totalHealthOfInjured) + rc.getHealth());
+				//System.out.println("1 ADDING: " + rc.getHealth());
+				rc.broadcast(totalHealthOfInjured, totalHealth);
+				rc.broadcast(numberInjuredInGroup[1], rc.readBroadcast(numberInjuredInGroup[1]) + 1);
 				if(enemiesNear.length > 0){//run like a little girl
 					int counterx = 0;
 					int countery = 0;
@@ -100,7 +111,6 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
 								}
 							}
 						}else{//else there is no object so tell group and try to attack others close
-							System.out.println("Group " + groupNum + " destroyed robot at " + groupAttackSpot);
 							rc.broadcast(groupAttackLocation[groupNum], -1);
 							for(Robot r: enemiesNear){
 								MapLocation temp = rc.senseLocationOf(r);
@@ -136,14 +146,16 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
 								rc.attackSquare(attackSpot);
 								result = true;
 								rc.broadcast(groupAttackLocation[groupNum], mapLocToInt(attackSpot));
-								System.out.println("Group " + groupNum + " is attacking " + attackSpot);
 							}
 						}
 					}
 				}
 			}else{//RRRRRUUUUUUUUUUUUUNNNNNNNNNNNNNNNN
-				rc.broadcast(rc.getRobot().getID() + 50, 1);//IM HURT I need to hide
-				rc.broadcast(numberInjuredInGroup[groupNum], rc.readBroadcast(numberInjuredInGroup[groupNum]) + 1);
+				int totalHealth = (int) (rc.readBroadcast(totalHealthOfInjured) + rc.getHealth());
+				System.out.println("2 ADDING: " + rc.getHealth());
+				rc.broadcast(totalHealthOfInjured, totalHealth);
+				rc.broadcast(numberInjuredInGroup[1], rc.readBroadcast(numberInjuredInGroup[1]) + 1);
+				injured = true;
 					//compute opposite direction of direction towards average enemy position
 				if(enemiesNear.length > 0){
 					int counterx = 0;
@@ -261,7 +273,6 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
         
         // we want map locations in the queue
         queue.add(goal);
-        // and the distance values / direction in the graph __|_
         while(!queue.isEmpty()) {
             intelligentSpawn(rc, rc.getLocation().directionTo(goal));
             if(rc.readBroadcast(startGroup) > 1){
@@ -269,6 +280,9 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
 			}else{
 				rc.broadcast(startGroupGO, 0);
 			}
+            rc.broadcast(firstRobot, 0);
+            //System.out.println("broadcasting firstRobot");
+			
             currentLocation = queue.poll();
             currentX = currentLocation.x;
             currentY = currentLocation.y;
@@ -337,15 +351,18 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
         int terrain;
         MapLocation targetLocation;
         int currentDistance = currentLocation.distanceSquaredTo(destination);
+        /*
         if(rc.getRobot().getID() == 105){
             System.out.println("1 " + shortestDistance + ", currentDistance:" + currentDistance);
         }
+        */
+        
         rc.setIndicatorString(2, "onWall: " + onWall);
         rc.setIndicatorString(1, destination.toString());
         // we are at out destination
         if(currentLocation.x == destination.x && currentLocation.y == destination.y) {
             if(rc.getRobot().getID() == 105){
-                System.out.println("2 " + shortestDistance + ", currentDistance:" + currentDistance);
+                //System.out.println("2 " + shortestDistance + ", currentDistance:" + currentDistance);
             }
             rc.setIndicatorString(0, "null");
             return null;
@@ -357,7 +374,7 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
         // if we can move in the direction of the destination
         if(!onWall && terrain != 2 && terrain != 3) {
             if(rc.getRobot().getID() == 105){
-                System.out.println("3 " + shortestDistance + ", currentDistance:" + currentDistance);
+                //System.out.println("3 " + shortestDistance + ", currentDistance:" + currentDistance);
             }
             shortestDistance = currentDistance;
             rc.setIndicatorString(0, dir.toString());
@@ -369,7 +386,7 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
             // if we ever get closer to our destination, and the square towards is open, leave wall
             if (currentDistance <= shortestDistance && terrain != 2 && terrain != 3) {
                 if(rc.getRobot().getID() == 105){
-                    System.out.println("4 " + shortestDistance + ", currentDistance:" + currentDistance);
+                    //System.out.println("4 " + shortestDistance + ", currentDistance:" + currentDistance);
                 }
                 onWall = false;
                 rc.setIndicatorString(0, dir.toString());
@@ -390,11 +407,11 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
                 terrain = rc.senseTerrainTile(targetLocation).ordinal();
             }
             if(rc.getRobot().getID() == 105){
-                System.out.println(counter);
+                //System.out.println(counter);
             }
             if (counter > 0) {
                 if(rc.getRobot().getID() == 105){
-                    System.out.println("5 " + shortestDistance + ", currentDistance:" + currentDistance);
+                    //System.out.println("5 " + shortestDistance + ", currentDistance:" + currentDistance);
                 }
                 rc.setIndicatorString(0, dir.toString());
                 currentDirection = dir;
@@ -406,7 +423,7 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
             terrain = rc.senseTerrainTile(wallLocation).ordinal();
             if(terrain != 2 && terrain != 3) {
                 if(rc.getRobot().getID() == 105){
-                    System.out.println("6 " + shortestDistance + ", currentDistance:" + currentDistance);
+                    //System.out.println("6 " + shortestDistance + ", currentDistance:" + currentDistance);
                 }
                 dir = dir.rotateRight().rotateRight();
                 rc.setIndicatorString(0, dir.toString());
@@ -414,7 +431,7 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
                 return dir;
             } else {
                 if(rc.getRobot().getID() == 105){
-                    System.out.println("7 " + shortestDistance + ", currentDistance:" + currentDistance);
+                    //System.out.println("7 " + shortestDistance + ", currentDistance:" + currentDistance);
                 }
                 rc.setIndicatorString(0, dir.toString());
                 currentDirection = dir;
@@ -454,7 +471,6 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
 	    		if(totalCows > largestCowGrowth) {
                     largestCowGrowth = totalCows;
                     closestGoalDistance = potentialGoal.distanceSquaredTo(rc.senseHQLocation());
-                    System.out.println("1. last best goal: " + maxLoc + ", new best goal: " + potentialGoal + ", total growth: " + totalCows);
                     maxLoc = potentialGoal;
 	    		}
 
@@ -463,7 +479,6 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
                 if (totalCows == largestCowGrowth) {
                     if (closestGoalDistance > potentialGoal.distanceSquaredTo(rc.senseHQLocation())) {
                         closestGoalDistance = potentialGoal.distanceSquaredTo(rc.senseHQLocation());
-                        System.out.println("2. last best goal: " + maxLoc + ", new best goal: " + potentialGoal + ", total growth: " + totalCows);
                         maxLoc = potentialGoal;
                     }
                 }
@@ -492,19 +507,21 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
         boolean newPASTRLocation;
         // loop through all enemy PASTRS - we need to find the one closest to our PASTR
     	for(MapLocation pastr: pastrLocs){
-    		newPASTRLocation = true;
-            // loop through all channels
-    		for(int channel: channels){
-                // don't calculate a whole map if one already exists for it.
-    			if(rc.readBroadcast(channel) == mapLocToInt(pastr)){
-                    newPASTRLocation = false;
-    			}
-    		}
-    		if(newPASTRLocation){
-    			if(pastr.distanceSquaredTo(ourPASTR) < smallestDistance) {
-                    closestPASTR = pastr;
-                    smallestDistance = pastr.distanceSquaredTo(ourPASTR);
-                }
+    		if(pastr.distanceSquaredTo(rc.senseEnemyHQLocation()) > 40){
+    			newPASTRLocation = true;
+	            // loop through all channels
+	    		for(int channel: channels){
+	                // don't calculate a whole map if one already exists for it.
+	    			if(rc.readBroadcast(channel) == mapLocToInt(pastr)){
+	                    newPASTRLocation = false;
+	    			}
+	    		}
+	    		if(newPASTRLocation){
+	    			if(pastr.distanceSquaredTo(ourPASTR) < smallestDistance) {
+	                    closestPASTR = pastr;
+	                    smallestDistance = pastr.distanceSquaredTo(ourPASTR);
+	                }
+	    		}
     		}
     	}
     	return closestPASTR;

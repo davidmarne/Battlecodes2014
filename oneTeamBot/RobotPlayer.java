@@ -32,6 +32,9 @@ public class RobotPlayer {
 	static int noNewPastrToAttack = 30;
 	static int pastrNeedsReinforcements = 31;
 	static int mapBeingAssessed = 32;
+	static int totalHealthOfInjured = 33;
+	static int InjuredAttack = 34;
+	static int firstRobot = 35;
 	//every robotID + 50 is the robots healing boolean
 	
 	public static void run(RobotController rc) {
@@ -51,7 +54,10 @@ public class RobotPlayer {
         while(true) {
 			if (rc.getType() == RobotType.HQ) {
 				try {
-                    if(rc.isActive()) {
+					
+					rc.broadcast(firstRobot, 0);
+                    
+					if(rc.isActive()) {
                         // on the first pass
                         if (first) {
                             first = false;
@@ -68,7 +74,8 @@ public class RobotPlayer {
                             	rc.broadcast(i, -1);
                             }
                         }
-
+                        
+                        //System.out.println("broadcasting firstRobot");
                         // first priority - attack nearby enemy robots
                         Robot[] enemiesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam().opponent());
 
@@ -117,7 +124,10 @@ public class RobotPlayer {
 								rc.broadcast(noNewPastrToAttack, 0);
 							}
 						}
-
+						
+						
+						    
+						
                         // third priority - single run - calculate a good spot four OUR PASTR
 						if(rc.readBroadcast(DefenseGoalLocation) == -1){
 							//sense a goal location based on PASTR growth  
@@ -248,6 +258,9 @@ public class RobotPlayer {
 									}
 									*/
 									//startBC = Clock.getBytecodeNum();
+									
+									
+									
 									if(rc.readBroadcast(pastrNeedsReinforcements) > 0){
 										robotMission = missions.defense;
 										goal = RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation));
