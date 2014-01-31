@@ -40,8 +40,8 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
     	
 		//if more guys than just i die go for it
 		if(injured){//if injured
-			if(Clock.getRoundNum() % 50 == 0){
-	    		if(rc.getHealth() > 85){
+			if(Clock.getRoundNum() % 150 == 0){
+	    		if(rc.getHealth() > 75){
 	    			injured = false;
 	    		}
 	    	}
