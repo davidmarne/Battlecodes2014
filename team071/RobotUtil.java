@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 
+
 public class RobotUtil {
 	static int DefenseChannelOffset = 10000;
 	static int DefenseGoalLocation = 64999;
@@ -39,7 +40,72 @@ public class RobotUtil {
 		Robot[] teammatesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam());
 		
 		if(enemiesNear.length > 0){
-			if(enemiesNear.length <= teammatesNear.length - 1){
+			if(injured){
+				//If we are guarding the pastr and there are few reinforcements do not flee
+				/*
+				if(teammatesNear.length < 4 && rc.getLocation().distanceSquaredTo(intToMapLoc(rc.readBroadcast(DefenseGoalLocation))) <= 9){
+					for(Robot r: enemiesNear){
+						MapLocation temp = rc.senseLocationOf(r);
+						if(rc.canAttackSquare(temp)){
+							if(rc.senseRobotInfo(r).type != RobotType.HQ){
+								rc.attackSquare(temp);
+								result = true;
+							}
+						}
+					}
+				}else */
+				if(rc.getHealth() > 70){
+					injured = false;
+					for(Robot r: enemiesNear){
+						MapLocation temp = rc.senseLocationOf(r);
+						if(rc.canAttackSquare(temp)){
+							if(rc.senseRobotInfo(r).type != RobotType.HQ){
+								rc.attackSquare(temp);
+								result = true;
+							}
+						}
+					}
+				}else{
+					int counterx = 0;
+					int countery = 0;
+					for(Robot opp: enemiesNear){
+						MapLocation oppLoc = rc.senseLocationOf(opp);
+						counterx += oppLoc.x;
+						countery += oppLoc.y;
+					}
+					MapLocation avg = new MapLocation(counterx / enemiesNear.length, countery / enemiesNear.length);
+		
+					Direction dirToGoal = rc.getLocation().directionTo(avg).opposite();
+					RobotUtil.moveInDirection(rc, dirToGoal);
+					result = true;
+				}
+			}else if(rc.getHealth() < 30){
+				injured = true;
+				/*if(teammatesNear.length < 4 && rc.getLocation().distanceSquaredTo(intToMapLoc(rc.readBroadcast(DefenseGoalLocation))) <= 9){
+					for(Robot r: enemiesNear){
+						MapLocation temp = rc.senseLocationOf(r);
+						if(rc.canAttackSquare(temp)){
+							if(rc.senseRobotInfo(r).type != RobotType.HQ){
+								rc.attackSquare(temp);
+								result = true;
+							}
+						}
+					}
+				}else{*/
+				int counterx = 0;
+				int countery = 0;
+				for(Robot opp: enemiesNear){
+					MapLocation oppLoc = rc.senseLocationOf(opp);
+					counterx += oppLoc.x;
+					countery += oppLoc.y;
+				}
+				MapLocation avg = new MapLocation(counterx / enemiesNear.length, countery / enemiesNear.length);
+	
+				Direction dirToGoal = rc.getLocation().directionTo(avg).opposite();
+				RobotUtil.moveInDirection(rc, dirToGoal);
+				result = true;
+			//	}
+			}else if(enemiesNear.length <= teammatesNear.length - 2){
 				if(rc.readBroadcast(groupAttackLocation) != -1){//if its group has a target
 					MapLocation groupAttackSpot = intToMapLoc(rc.readBroadcast(groupAttackLocation));
 					//if you can sense the spot, and theres still a robot attack, else tell everyone its gone and try and attack any other bots around
@@ -80,7 +146,6 @@ public class RobotUtil {
 							}
 						}
 					}else{//else you are not close to the spot if you can hit a robot do so, or else move towards group attck location
-						boolean flag = false;
 						for(Robot r: enemiesNear){
 							MapLocation temp = rc.senseLocationOf(r);
 							if(rc.canAttackSquare(temp)){

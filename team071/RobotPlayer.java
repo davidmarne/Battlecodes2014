@@ -171,6 +171,10 @@ public class RobotPlayer {
 				}
 			} else if (rc.getType() == RobotType.SOLDIER) {
 				try {
+					if(Clock.getRoundNum() % 91 == 0){
+						sentToAttack = true;
+					}
+					
 					if (rc.isActive()) {
 						
 						if (first) {
@@ -198,9 +202,7 @@ public class RobotPlayer {
                                 foundGoal = true;
 							}
 							
-							if(Clock.getRoundNum() % 91 == 0){
-								sentToAttack = true;
-							}
+							
 						}else{
 							//int startBC = Clock.getBytecodeNum();
 							currentLocation = rc.getLocation();
