@@ -37,6 +37,7 @@ public class RobotPlayer {
 	//every robotID + 50 is the robots healing boolean
 	
 	public static void run(RobotController rc) {
+		
 		rand = new Random();
 		Direction[] directions = Direction.values();
 		int mapWidth = rc.getMapWidth();
@@ -100,18 +101,21 @@ public class RobotPlayer {
                                 }
                             }
                         }
-
+                        /*
+                        if(rc.readBroadcast(startGroup) > 3){
+							rc.broadcast(startGroupGO, 1);
+						}else{
+							rc.broadcast(startGroupGO, 0);
+						}*/
+                        
+                        
 					    // Second priority - Check if a robot is spawnable and spawn one if it is
 						if(rc.senseRobotCount() < 25){
 							RobotUtil.intelligentSpawn(rc, rc.getLocation().directionTo(rc.senseEnemyHQLocation()));
 						}
 
 						//if there are 5 new spawnees at the hq send em out
-						if(rc.readBroadcast(startGroup) > 1){
-							rc.broadcast(startGroupGO, 1);
-						}else{
-							rc.broadcast(startGroupGO, 0);
-						}
+						
 						
 						//if goal destroyed pick a new goal
 						if(rc.readBroadcast(OffenseGoalDestroyed) == 1){
@@ -167,15 +171,18 @@ public class RobotPlayer {
 			} else if (rc.getType() == RobotType.SOLDIER) {
 				try {
 					if (rc.isActive()) {
-                        if (first) {
+						
+						if (first) {
                             RobotUtil.moveInDirection(rc, Direction.NORTH);
                             first = false;
                         } else if (second) {
                             RobotUtil.moveInDirection(rc, Direction.NORTH);
                             second = false;
                         }
-
+						
+						
                         if(!foundGoal || !sentToAttack){
+                        	
 							//get map to our pastr if possible
 							if((rc.readBroadcast(offenseInitialized) == 0 || rc.readBroadcast(OffenseGoalDestroyed) == 1) && !foundGoal){
 								if(rc.readBroadcast(DefenseGoalLocation) >= 0 ){
@@ -189,28 +196,25 @@ public class RobotPlayer {
 								robotMission = missions.offense;
                                 foundGoal = true;
 							}
-							//when a group of five or more has been gathered we can finally go to goal
-							if(rc.readBroadcast(startGroupGO) == 1){
-								rc.broadcast(startGroup, rc.readBroadcast(startGroup) - 1);
-                                sentToAttack = true;
-							}else{
-								// move away from hq initially
+							
+							if(Clock.getRoundNum() % 91 == 0){
+								sentToAttack = true;
 							}
 						}else{
 							//int startBC = Clock.getBytecodeNum();
 							currentLocation = rc.getLocation();
-							if(rc.readBroadcast(buildingProgress) == 1){
-								if(rc.readBroadcast(pastrLocation) == -1){
+							
+							if(currentLocation.equals(RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation)))){
+								rc.construct(RobotType.PASTR);
+							}else if(rc.readBroadcast(pastrLocation) == -1){
 									if(currentLocation.distanceSquaredTo(RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation))) < 3){
 										rc.broadcast(pastrLocation, RobotUtil.mapLocToInt(currentLocation));
-										rc.construct(RobotType.PASTR);
+										rc.construct(RobotType.NOISETOWER);
 									}
-								}else if(currentLocation.equals(RobotUtil.intToMapLoc(rc.readBroadcast(pastrLocation)))){
-									rc.construct(RobotType.PASTR);
-								}
-							}else if(currentLocation.equals(RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation)))){
-								rc.construct(RobotType.NOISETOWER);
+							}else if(currentLocation.equals(RobotUtil.intToMapLoc(rc.readBroadcast(pastrLocation)))){
+									rc.construct(RobotType.NOISETOWER);
 							}
+							
 							
 							boolean madeMove = RobotUtil.micro(rc);
 							
@@ -222,13 +226,7 @@ public class RobotPlayer {
 										System.out.println("Retrieved " + goal);
 										robotMission = missions.offense;
 									}else{
-									    //if a pastr and noisetower havent been made/assigned to a bot
-										if(rc.readBroadcast(buildingProgress) < 1){
-											if(currentLocation.equals(goal)){
-												rc.broadcast(buildingProgress, 1);
-												rc.construct(RobotType.NOISETOWER);	
-											}
-										}
+									    
 										//move towards goal
 										if(rc.readBroadcast(mapBeingAssessed) == 1){
 											RobotUtil.moveInDirection(rc, RobotUtil.bugPathNextSquare(rc, rc.getLocation(), goal));
@@ -279,15 +277,18 @@ public class RobotPlayer {
                         currentLocation = rc.getLocation();
                         int maxAttack = (int)Math.sqrt(rc.getType().attackRadiusMaxSquared);
                         for (int j = 0; j < 1080; j += 45) {
-                            for(int i = maxAttack; i > 2; i-=1){
+                            for(int i = maxAttack; i > 6; i-=1){
                                 if(rc.isActive()){
+                                	if((j % 2 == 1) && i <= 8) {
+                                		break;
+                                	}
                                     double xVal = Math.cos(j * Math.PI / 180.0) * i;
                                     double yVal = Math.sin(j * Math.PI / 180.0) * i;
 
                                     MapLocation squareToAttack = currentLocation.add((int)xVal, (int)yVal);
                                     if(rc.canAttackSquare(squareToAttack) &&
-                                            squareToAttack.x < rc.getMapWidth() + 3 && squareToAttack.x > -3 &&
-                                            squareToAttack.y < rc.getMapHeight() + 3 && squareToAttack.y > -3) {
+                                            squareToAttack.x < rc.getMapWidth() + 4 && squareToAttack.x > -4 &&
+                                            squareToAttack.y < rc.getMapHeight() + 4 && squareToAttack.y > -4) {
                                         rc.attackSquare(squareToAttack);
                                         rc.yield();
                                         rc.yield();
