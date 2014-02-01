@@ -46,6 +46,8 @@ public class RobotPlayer {
         MapLocation ourPASTR = new MapLocation(0,0);
 		boolean first = true;
 		boolean second = true;
+        boolean foundGoal = false;
+        boolean sentToAttack = false;
 		MapLocation currentLocation;
 		missions robotMission = missions.defense;
         boolean alreadyAttacked;
@@ -165,24 +167,32 @@ public class RobotPlayer {
 			} else if (rc.getType() == RobotType.SOLDIER) {
 				try {
 					if (rc.isActive()) {
-						if(first || second){
+                        if (first) {
+                            RobotUtil.moveInDirection(rc, Direction.NORTH);
+                            first = false;
+                        } else if (second) {
+                            RobotUtil.moveInDirection(rc, Direction.NORTH);
+                            second = false;
+                        }
+
+                        if(!foundGoal || !sentToAttack){
 							//get map to our pastr if possible
-							if((rc.readBroadcast(offenseInitialized) == 0 || rc.readBroadcast(OffenseGoalDestroyed) == 1) && first){
+							if((rc.readBroadcast(offenseInitialized) == 0 || rc.readBroadcast(OffenseGoalDestroyed) == 1) && !foundGoal){
 								if(rc.readBroadcast(DefenseGoalLocation) >= 0 ){
 									//all bots go to our pastr to rally
 									goal = RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation));
 									robotMission = missions.defense;
-									first = false;
+                                    foundGoal = true;
 								}
-							}else if(rc.readBroadcast(offenseInitialized) == 1 && first){
+							}else if(rc.readBroadcast(offenseInitialized) == 1 && !foundGoal){
 								goal = RobotUtil.intToMapLoc(rc.readBroadcast(rc.readBroadcast(OffenseCurrentGoalOffset)));
 								robotMission = missions.offense;
-								first = false;	
+                                foundGoal = true;
 							}
 							//when a group of five or more has been gathered we can finally go to goal
 							if(rc.readBroadcast(startGroupGO) == 1){
 								rc.broadcast(startGroup, rc.readBroadcast(startGroup) - 1);
-								second = false;
+                                sentToAttack = true;
 							}else{
 								// move away from hq initially
 							}
@@ -223,7 +233,7 @@ public class RobotPlayer {
 										if(rc.readBroadcast(mapBeingAssessed) == 1){
 											RobotUtil.moveInDirection(rc, RobotUtil.bugPathNextSquare(rc, rc.getLocation(), goal));
 										}else{
-											int intToGoal = rc.readBroadcast(RobotUtil.mapLocToInt(new MapLocation(currentLocation.x,currentLocation.y)) + DefenseChannelOffset) - 1;
+											int intToGoal = rc.readBroadcast(RobotUtil.mapLocToInt(currentLocation) + DefenseChannelOffset) - 1;
 											Direction dirToGoal = directions[intToGoal];
 											RobotUtil.moveInDirection(rc, dirToGoal);
 										}
@@ -235,7 +245,7 @@ public class RobotPlayer {
 										goal = RobotUtil.intToMapLoc(rc.readBroadcast(DefenseGoalLocation));
 										rc.broadcast(pastrNeedsReinforcements, rc.readBroadcast(pastrNeedsReinforcements) - 1);
 									}else if(rc.readBroadcast(noNewPastrToAttack) == 1){
-										int intToGoal = rc.readBroadcast(RobotUtil.mapLocToInt(new MapLocation(currentLocation.x,currentLocation.y)) + DefenseChannelOffset) - 1;
+										int intToGoal = rc.readBroadcast(RobotUtil.mapLocToInt(currentLocation) + DefenseChannelOffset) - 1;
 										Direction dirToGoal = directions[intToGoal];
 										RobotUtil.moveInDirection(rc, dirToGoal);
 									}else{
@@ -251,7 +261,7 @@ public class RobotPlayer {
 											}
 										}
 										//move towards goal
-										int intToGoal = rc.readBroadcast(RobotUtil.mapLocToInt(new MapLocation(currentLocation.x,currentLocation.y)) + (rc.readBroadcast(OffenseCurrentGoalOffset)*10000)) - 1;
+										int intToGoal = rc.readBroadcast(RobotUtil.mapLocToInt(currentLocation) + (rc.readBroadcast(OffenseCurrentGoalOffset)*10000)) - 1;
 										Direction dirToGoal = directions[intToGoal];
 										RobotUtil.moveInDirection(rc, dirToGoal);
 									}

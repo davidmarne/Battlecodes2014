@@ -266,7 +266,7 @@ public class RobotPlayer {
 						}
 					}
 				} catch (Exception e) {
-					//e.printStackTrace();
+					e.printStackTrace();
 				}
 			} else if (rc.getType() == RobotType.NOISETOWER) {
 				try {

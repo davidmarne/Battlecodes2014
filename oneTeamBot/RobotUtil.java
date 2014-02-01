@@ -326,6 +326,21 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
             shortestDistance = rc.getLocation().distanceSquaredTo(destination);
         }
 
+        boolean messedUp = true;
+        if(onWall) {
+            for(Direction d: allDirections) {
+                int temp = rc.senseTerrainTile(currentLocation.add(d)).ordinal();
+                if(temp == 2 || temp == 3) {
+                    messedUp = false;
+                    break;
+                }
+            }
+        }
+
+        if(messedUp) {
+            onWall = false;
+        }
+
         int terrain;
         MapLocation targetLocation;
         int currentDistance = currentLocation.distanceSquaredTo(destination);
@@ -428,13 +443,14 @@ public static boolean micro(RobotController rc, int groupNum) throws GameActionE
     	MapLocation maxLoc = new MapLocation(-1,-1);
         int closestGoalDistance = 999;
         double totalCows;
-    	
-    	for(int i = 0; i <  avg; i++){
+    	int i = 0;
+    	while (i < avg){
     		int currentWidth = rand.nextInt() % mapWidth;
     		int currentHeight = rand.nextInt() % mapHeight;
     		MapLocation potentialGoal = new MapLocation(currentWidth, currentHeight);
     		
     		if(rc.senseTerrainTile(potentialGoal).ordinal() != 2 && rc.senseTerrainTile(potentialGoal).ordinal() != 3 && potentialGoal.distanceSquaredTo(rc.senseEnemyHQLocation()) > 100){
+                i++;
                 totalCows = 0;
 	    		for(int j = -4; j <= 4; j++){
 	    			for(int k = -4; k <= 4; k++){
