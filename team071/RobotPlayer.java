@@ -72,7 +72,6 @@ public class RobotPlayer {
                             }
                         }
                         
-                        //System.out.println("broadcasting firstRobot");
                         // first priority - attack nearby enemy robots
                         Robot[] enemiesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam().opponent());
 
@@ -135,8 +134,6 @@ public class RobotPlayer {
 								int bcUsed = Clock.getBytecodeNum();
 								int round = Clock.getRoundNum();
                                 ourPASTR = RobotUtil.sensePASTRGoal3(rc, mapWidth, mapHeight);
-                                System.out.println(Clock.getBytecodeNum() - bcUsed);
-                                System.out.println(Clock.getRoundNum() - round);
                                 // keep calculating goals until one returns that is not the initial one
                                 if(ourPASTR.x != -1 && ourPASTR.y != -1) {
 									break;
@@ -146,7 +143,6 @@ public class RobotPlayer {
 							rc.broadcast(mapBeingAssessed, 1);
 							//Pathing Algorithm
 	                        map = RobotUtil.assessMapWithDirection(rc, ourPASTR, map);
-	                        RobotUtil.logMap(map);
 	                        //broadcast the map out for other robots to read
 	                        RobotUtil.broadcastMap(rc, map, DefenseChannelOffset);
 							rc.broadcast(mapBeingAssessed, 0);
@@ -159,7 +155,6 @@ public class RobotPlayer {
 										rc.broadcast(channel, RobotUtil.mapLocToInt(goal));
 										map = RobotUtil.assessMapWithDirection(rc, goal, new int[mapWidth][mapHeight]);
 										RobotUtil.broadcastMap(rc, map, channel*10000);
-										System.out.println(goal+ " has been added to " +channel);
 										break;
 									}
 								}
@@ -226,7 +221,6 @@ public class RobotPlayer {
 									//startBC = Clock.getBytecodeNum();
 									if(rc.readBroadcast(sendToAttack) > 0){
 										goal = RobotUtil.intToMapLoc(rc.readBroadcast(rc.readBroadcast(OffenseCurrentGoalOffset)));
-										System.out.println("Retrieved " + goal);
 										robotMission = missions.offense;
 									}else{
 									    
@@ -266,7 +260,6 @@ public class RobotPlayer {
 										Direction dirToGoal = directions[intToGoal];
 										RobotUtil.moveInDirection(rc, dirToGoal);
 									}
-									//System.out.println("Offense ByteCodes: " + (Clock.getBytecodeNum() - startBC));
 								}
 							}
 						}
@@ -319,7 +312,6 @@ public class RobotPlayer {
             		}else if(rc.readBroadcast(offenseInitialized) == 0 ){
             			int oldOffset = rc.readBroadcast(OffenseCurrentGoalOffset);
 						int n = RobotUtil.getNewGoalPastr(rc, oldOffset, OffenseGoalLocations);
-						//System.out.println("Channel: " + n);
 						if(n != -1){
 							rc.broadcast(OffenseCurrentGoalOffset, n);
 							rc.broadcast(sendToAttack, 5);
