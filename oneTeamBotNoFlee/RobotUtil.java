@@ -39,7 +39,7 @@ public class RobotUtil {
 		Robot[] teammatesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam());
 		
 		if(enemiesNear.length > 0){
-			if(enemiesNear.length <= teammatesNear.length - 2){
+			if(enemiesNear.length <= teammatesNear.length - 1){
 				if(rc.readBroadcast(groupAttackLocation) != -1){//if its group has a target
 					MapLocation groupAttackSpot = intToMapLoc(rc.readBroadcast(groupAttackLocation));
 					//if you can sense the spot, and theres still a robot attack, else tell everyone its gone and try and attack any other bots around
@@ -441,7 +441,7 @@ public static Direction bugPathNextSquare(RobotController rc, MapLocation curren
 
 public static MapLocation sensePASTRGoal3(RobotController rc, int mapWidth, int mapHeight){
 
-	int avg = mapWidth + mapHeight;
+	int avg = 2 * (mapWidth + mapHeight);
 	double[][] map = rc.senseCowGrowth();
 	mapWidth--;
 	mapHeight--;

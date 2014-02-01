@@ -134,8 +134,11 @@ public class RobotPlayer {
 						if(rc.readBroadcast(DefenseGoalLocation) == -1){
 							//sense a goal location based on PASTR growth  
 							while(true){
+								int bcUsed = Clock.getBytecodeNum();
+								int round = Clock.getRoundNum();
                                 ourPASTR = RobotUtil.sensePASTRGoal3(rc, mapWidth, mapHeight);
-
+                                System.out.println(Clock.getBytecodeNum() - bcUsed);
+                                System.out.println(Clock.getRoundNum() - round);
                                 // keep calculating goals until one returns that is not the initial one
                                 if(ourPASTR.x != -1 && ourPASTR.y != -1) {
 									break;
@@ -303,11 +306,9 @@ public class RobotPlayer {
                 }
             }else if(rc.getType() == RobotType.PASTR){
             	try{
-                    rc.broadcast(InjuredAttack, 0);
+                    //rc.broadcast(InjuredAttack, 0);
             		Robot[] teammatesNear = rc.senseNearbyGameObjects(Robot.class, 35, rc.getTeam());
-                    if (teammatesNear.length > 5 && rc.readBroadcast(offenseInitialized) == 1) {
-                        rc.broadcast(InjuredAttack, 1);
-                    }
+                    
             		if (pastrHurt){
             			if(rc.getHealth() > 90){
             				pastrHurt = false;
@@ -321,10 +322,7 @@ public class RobotPlayer {
 						//System.out.println("Channel: " + n);
 						if(n != -1){
 							rc.broadcast(OffenseCurrentGoalOffset, n);
-							System.out.println("Channel: " + n);
-							System.out.println("GOTO " + RobotUtil.intToMapLoc(rc.readBroadcast(n)));
 							rc.broadcast(sendToAttack, 5);
-							rc.broadcast(groupLeaderPicked, 1);
 							rc.broadcast(offenseInitialized, 1);
 							//gives time for e
 							rc.yield();
