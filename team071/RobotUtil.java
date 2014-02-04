@@ -571,22 +571,22 @@ public static MapLocation getPastrToMakeGoal(RobotController rc, int[] channels,
 	boolean newPASTRLocation;
 	// loop through all enemy PASTRS - we need to find the one closest to our PASTR
 	for(MapLocation pastr: pastrLocs){
-		//if(pastr.distanceSquaredTo(rc.senseEnemyHQLocation()) > 40){
-		newPASTRLocation = true;
-		// loop through all channels
-		for(int channel: channels){
-			// don't calculate a whole map if one already exists for it.
-			if(rc.readBroadcast(channel) == mapLocToInt(pastr)){
-				newPASTRLocation = false;
-			}
+		if(pastr.distanceSquaredTo(rc.senseEnemyHQLocation()) > 40){
+            newPASTRLocation = true;
+            // loop through all channels
+            for(int channel: channels){
+                // don't calculate a whole map if one already exists for it.
+                if(rc.readBroadcast(channel) == mapLocToInt(pastr)){
+                    newPASTRLocation = false;
+                }
+            }
+            if(newPASTRLocation){
+                if(pastr.distanceSquaredTo(ourPASTR) < smallestDistance) {
+                    closestPASTR = pastr;
+                    smallestDistance = pastr.distanceSquaredTo(ourPASTR);
+                }
+            }
 		}
-		if(newPASTRLocation){
-			if(pastr.distanceSquaredTo(ourPASTR) < smallestDistance) {
-				closestPASTR = pastr;
-				smallestDistance = pastr.distanceSquaredTo(ourPASTR);
-			}
-		}
-		//}
 	}
 	return closestPASTR;
 }
